@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+service Sled {
+  rpc Command(CommandRequest) returns (CommandResponse);
+}
+
+
+message CommandRequest { }
+
+
+message CommandResponse {
+  Wipe wipe = 1;
+  Write write = 2;
+  Kexec kexec = 3;
+}
+
+message Wipe {
+  string device = 1;
+}
+
+message Write {
+  bytes image = 1;
+  string device = 2;
+}
+
+
+message Kexec {
+  string kernel = 1;
+  string append = 2;
+  string initrd = 3;
+}
