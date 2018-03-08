@@ -1,4 +1,8 @@
+# vim
 *.sw*
-sledc
-sledd
+
+# artifacts
+build
+
+# go dependencies
 vendor
