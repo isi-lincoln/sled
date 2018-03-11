@@ -1,9 +1,12 @@
-all: build/sledc build/sledd build/initramfs.cpio
+all: build/sledc build/sledd build/sledctl build/initramfs.cpio
 
 build/sledc: sledc/main.go sled.pb.go | build
 	go build -o $@ $<
 
 build/sledd: sledd/main.go sled.pb.go | build
+	go build -o $@ $<
+
+build/sledctl: sledctl/main.go sled.pb.go | build
 	go build -o $@ $<
 
 sled.pb.go: sled.proto

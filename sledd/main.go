@@ -67,11 +67,28 @@ func (s *Sledd) Update(
 	log.Printf("update %#v", e)
 
 	err := db.Update(func(tx *bolt.Tx) error {
+
+		// grab a reference to the clients bucker
 		b := tx.Bucket([]byte("clients"))
 		if b == nil {
 			return fmt.Errorf("update: no client bucket")
 		}
-		js, err := json.Marshal(e.CommandSet)
+
+		// get the current value associated with the specified mac
+		var current *sled.CommandSet
+		v := b.Get([]byte(e.Mac))
+		if v != nil {
+			err := json.Unmarshal(v, current)
+			if err != nil {
+				return fmt.Errorf("command: malformed command set @ %s", e.Mac)
+			}
+		}
+
+		// merge the update into the current command set
+		updated := csMerge(current, e.CommandSet)
+
+		// psersist the update
+		js, err := json.Marshal(updated)
 		if err != nil {
 			return fmt.Errorf("update: failed to serialize command set %v", err)
 		}
@@ -79,6 +96,7 @@ func (s *Sledd) Update(
 		if err != nil {
 			return fmt.Errorf("update: failed to put command set %v", err)
 		}
+
 		return nil
 	})
 
@@ -90,6 +108,27 @@ func (s *Sledd) Update(
 		Success: err != nil,
 		Message: err.Error(),
 	}, nil
+}
+
+func csMerge(current, update *sled.CommandSet) *sled.CommandSet {
+	result := &sled.CommandSet{}
+	*result = *update
+	if current == nil {
+		return result
+	}
+	if update.Wipe != nil {
+		result.Wipe = &sled.Wipe{}
+		*result.Wipe = *update.Wipe
+	}
+	if update.Write != nil {
+		result.Write = &sled.Write{}
+		*result.Write = *update.Write
+	}
+	if update.Kexec != nil {
+		result.Kexec = &sled.Kexec{}
+		*result.Kexec = *update.Kexec
+	}
+	return result
 }
 
 var db *bolt.DB
