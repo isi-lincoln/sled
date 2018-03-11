@@ -1,14 +1,25 @@
 syntax = "proto3";
 
 service Sled {
-  rpc Command(CommandRequest) returns (CommandResponse);
+  rpc Command(CommandRequest) returns (CommandSet);
+  rpc Update(UpdateRequest) returns (UpdateResponse);
 }
 
 
-message CommandRequest { }
+message CommandRequest { 
+  string mac = 1;
+}
+message UpdateResponse { 
+  bool success = 1;
+  string message = 2;
+}
 
+message UpdateRequest {
+  string mac = 1;
+  CommandSet commandSet = 2;
+}
 
-message CommandResponse {
+message CommandSet {
   Wipe wipe = 1;
   Write write = 2;
   Kexec kexec = 3;
@@ -19,8 +30,9 @@ message Wipe {
 }
 
 message Write {
-  bytes image = 1;
+  string name = 1;
   string device = 2;
+  bytes image = 3;
 }
 
 

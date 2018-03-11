@@ -10,3 +10,13 @@ The sled client supports the following functionalities.
 - kexec-ing into images
 
 Every time the client boots it asks the server what to do, so large numbers of devices can be manged from a single logical place.
+
+## sledd
+
+sledd issues commands to clients. Commands are issued to clients in groups. A group of commands can consist of any one of the following.
+
+- wipe(device string)
+- write(image, device string)
+- kexec(kernel, append, initrd string)
+
+sledd keeps track of clients by mac address. The internal bolt db has a single bucket called 'clients'. That bucket maps client mac addresses to command sets. sled also has a collection of images it can serve to clients. These images are kept in `/var/img`. Each `name` entry in the `write` is a reference to a filename located at `/var/img`.

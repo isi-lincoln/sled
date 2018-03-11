@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
 	"os/exec"
 	"strconv"
@@ -14,13 +16,34 @@ import (
 	"github.com/ceftb/sled"
 )
 
+var server = flag.String("server", "sled", "sled server to connect to")
+var ifx = flag.String("interface", "eth0", "the interface to use for client id")
+
 func main() {
-	fmt.Println("sled-client")
+
+	flag.Parse()
 
 	conn, sledd := initClient()
 	defer conn.Close()
 
-	resp, err := sledd.Command(context.TODO(), &sled.CommandRequest{})
+	ifxs, err := net.Interfaces()
+	if err != nil {
+		log.Fatalf("error getting interface info - %v", err)
+	}
+	if len(ifxs) < 1 {
+		log.Fatalf("no interfaces!")
+	}
+	mac := ""
+	for _, x := range ifxs {
+		if x.Name == *ifx {
+			x.HardwareAddr.String()
+		}
+	}
+	if mac == "" {
+		log.Fatal("interface %s not found", *ifx)
+	}
+
+	resp, err := sledd.Command(context.TODO(), &sled.CommandRequest{mac})
 	if err != nil {
 		log.Fatalf("error getting sledd command - %v", err)
 	}
@@ -34,29 +57,64 @@ func main() {
 	if resp.Kexec != nil {
 		kexec(resp.Kexec.Kernel, resp.Kexec.Append, resp.Kexec.Initrd)
 	}
+	if resp.Wipe == nil && resp.Write == nil && resp.Kexec == nil {
+		log.Warn("received empty command from server")
+	}
 }
 
 // Wipe the specified device clean with zeros.
 func wipe(device string) {
+	log.Infof("wiping device %s", device)
+
 	if !blockDeviceExists(device) {
 		log.Fatalf("block device %s does not exist", device)
 	}
+
+	//wipe 1 kB at a time
+	buf := make([]byte, 1024)
+
 	size := getBlockDeviceSize(device)
-	cmd := exec.Command(
-		"dd",
-		"if=/dev/null",
-		fmt.Sprintf("of=/dev/%s", device),
-		"bs=1",
-		fmt.Sprintf("count=%d", size),
-	)
-	out, err := cmd.CombinedOutput()
+
+	dev, err := os.Open(fmt.Sprintf("/dev/%s", device))
 	if err != nil {
-		log.Fatalf("wipe: could not execute dd - %v, %v", err, out)
+		log.Fatalf("write: error opening device %v", err)
 	}
+
+	var N int64
+	for N < size {
+		n, err := dev.Write(buf)
+		N += int64(n)
+		if n < 1024 {
+			break
+		}
+		if err != nil {
+			log.Fatalf("error zeroing disk: %v", err)
+		}
+	}
+
+	if N < size {
+		log.Warning("only zeroed %d of $d bytes on disk", N, size)
+	}
+
+	/*
+		cmd := exec.Command(
+			"dd",
+			"if=/dev/null",
+			fmt.Sprintf("of=/dev/%s", device),
+			"bs=1",
+			fmt.Sprintf("count=%d", size),
+		)
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			log.Fatalf("wipe: could not execute dd - %v, %v", err, out)
+		}
+	*/
 }
 
 // Write the binary image to the specified device.
 func write(image []byte, device string) {
+	log.Infof("writing image to device %s", device)
+
 	if !blockDeviceExists(device) {
 		log.Fatalf("block device %s does not exist", device)
 	}
@@ -82,6 +140,8 @@ func write(image []byte, device string) {
 
 // kexec the image with the specified args
 func kexec(kernel, append, initrd string) {
+	log.Infof("kexec - %s %s %s", kernel, append, initrd)
+
 	out, err := exec.Command("kexec", "-l", kernel, append, initrd).CombinedOutput()
 	if err != nil {
 		log.Fatalf("kexec load failed - %v : %s", err, out)
@@ -136,7 +196,7 @@ func getBlockDeviceSize(device string) int64 {
 }
 
 func initClient() (*grpc.ClientConn, sled.SledClient) {
-	conn, err := grpc.Dial("sled:6000", grpc.WithInsecure())
+	conn, err := grpc.Dial(*server+":6000", grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("could not connect to sled server - %v", err)
 	}
