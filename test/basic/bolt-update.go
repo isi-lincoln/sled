@@ -18,20 +18,24 @@ func main() {
 
     // Update is a bolt db write, only one writer at a time.
     err = db.Update(func(tx *bolt.Tx) error {
+        // kill bucket (for testing)
+        err = tx.DeleteBucket([]byte("clients"))
         // bucket is like a traditional database with name clients
-        bucket, err := tx.CreateBucketIfNotExists([]byte("clients"))
+        bucket, err := tx.CreateBucket([]byte("clients"))
         if err != nil {
             log.Fatal(err)
         }
 
         // create a bogus wipe sled request
-        // device is the block device, e.g. /dev/sda
+        // device is the block device name (/sys/block) not (/dev), e.g. sda
         sledCmd := sled.CommandSet{
             &sled.Wipe {
-                Device: "/dev/sda",
+                Device: "sda",
             },
-            &sled.Write {},
-            &sled.Kexec {},
+            //&sled.Write {},
+            nil,
+            //&sled.Kexec {},
+            nil,
         }
 
         // now we need to marshall it to write out
@@ -42,7 +46,8 @@ func main() {
 
         // put in a key-value for our mac address
         // this is eth0 mac address, the value needs to be a sled.CommandSet
-        err = bucket.Put([]byte("52:54:00:b4:c5:0d"), []byte(jsonWipe))
+        // FIXME: change everytime based on generated mac
+        err = bucket.Put([]byte("52:54:00:ff:0c:b1"), []byte(jsonWipe))
 
         // add a few other for shit and giggle
         err = bucket.Put([]byte("52:54:00:b1:64:a1"), []byte("42"))

@@ -9,7 +9,7 @@ import (
     "os"
     "os/exec"
     "strconv"
-
+    "strings" // remove newline from file
     log "github.com/sirupsen/logrus"
     "google.golang.org/grpc"
 
@@ -34,9 +34,7 @@ func main() {
         log.Fatalf("no interfaces!")
     }
     mac := ""
-    log.Println(ifxs)
     for _, x := range ifxs {
-        log.Println(x)
         if x.Name == *ifx {
             mac = x.HardwareAddr.String()
         }
@@ -82,9 +80,12 @@ func wipe(device string) {
         log.Fatalf("write: error opening device %v", err)
     }
 
-    var N int64
+    // explicitly set N to 0
+    var N int64 = 0
+    // golang while loop
     for N < size {
         n, err := dev.Write(buf)
+        log.Printf("N: %d, n: %d, err: %v\n", N, n, err)
         N += int64(n)
         if n < 1024 {
             break
@@ -95,7 +96,7 @@ func wipe(device string) {
     }
 
     if N < size {
-        log.Warning("only zeroed %d of $d bytes on disk", N, size)
+        log.Warningf("only zeroed %d of %d bytes on disk", N, size)
     }
 
     /*
@@ -190,7 +191,9 @@ func getBlockDeviceSize(device string) int64 {
     if err != nil {
         log.Fatalf("error opening /sys/block/%s/size - %v", err)
     }
-    size, err := strconv.ParseInt(string(content), 10, 0)
+    // get rid of the nasty newline if it exists
+    contentStr := strings.TrimSuffix(string(content), "\n")
+    size, err := strconv.ParseInt(contentStr, 10, 0)
     if err != nil {
         log.Fatalf("error parsing /sys/block/%s/size = %v - %s", err, content)
     }
