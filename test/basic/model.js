@@ -1,8 +1,8 @@
 
 client = {
   name: 'client',
-  kernel: 'bzImage-4.15.8:x86_64',
-  initrd: 'sled-0.1.0:x86_64',
+  kernel: '4.15.11-kernel',
+  initrd: 'initramfs',
   cmdline: 'console=ttyS1',
   defaultnic: 'e1000',
   defaultdisktype: { dev: 'sd', bus: 'sata' }
@@ -13,7 +13,8 @@ server = {
   image: 'fedora-27',
   cpu: { cores: 2 },
   memory: { capacity: GB(2) },
-  mounts: [{ source: env.PWD+'/../..', point: '/tmp/code' }]
+  //mounts: [{ source: env.PWD+'/../..', point: '/tmp/code' }]
+  mounts: [{ source: '/home/lthurlow/go/src/github.com/ceftb/sled/', point: '/tmp/code' }]
 }
 
 topo = {

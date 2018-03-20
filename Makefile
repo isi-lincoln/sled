@@ -1,3 +1,5 @@
+SHELL:=/bin/bash
+
 all: build/sledc build/sledd build/sledctl build/initramfs.cpio
 
 build/sledc: sledc/main.go sled.pb.go | build
