@@ -98,21 +98,9 @@ func wipe(device string) {
 
     if N < size {
         log.Warningf("only zeroed %d of %d bytes on disk", N, size)
+    } else {
+        log.Println("device wiped")
     }
-
-    /*
-        cmd := exec.Command(
-            "dd",
-            "if=/dev/null",
-            fmt.Sprintf("of=/dev/%s", device),
-            "bs=1",
-            fmt.Sprintf("count=%d", size),
-        )
-        out, err := cmd.CombinedOutput()
-        if err != nil {
-            log.Fatalf("wipe: could not execute dd - %v, %v", err, out)
-        }
-    */
 }
 
 // Write the binary image to the specified device.

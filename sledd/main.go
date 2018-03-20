@@ -163,18 +163,5 @@ func main() {
     })
 
     log.Info("Listening on tcp://0.0.0.0:6000")
-        db.View(func(tx *bolt.Tx) error {
-        // Assume bucket exists and has keys
-        b := tx.Bucket([]byte("clients"))
-
-        c := b.Cursor()
-
-        for k, v := c.First(); k != nil; k, v = c.Next() {
-            log.Printf("key=%s, value=%s\n", k, v)
-        }
-
-        return nil
-    })
     grpcServer.Serve(l)
-
 }

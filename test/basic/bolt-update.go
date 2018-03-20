@@ -3,6 +3,7 @@ package main
 import (
     "log"
     "encoding/json"
+    "io/ioutil"
     "github.com/boltdb/bolt"
     "github.com/ceftb/sled"
 )
@@ -26,6 +27,9 @@ func main() {
             log.Fatal(err)
         }
 
+        // alpine image in bytes! in memory!
+        imgBytes, err := ioutil.ReadFile("/var/img/alpine.img")
+
         // create a bogus wipe sled request
         // device is the block device name (/sys/block) not (/dev), e.g. sda
         sledCmd := sled.CommandSet{
@@ -33,7 +37,12 @@ func main() {
                 Device: "sda",
             },
             //&sled.Write {},
-            nil,
+            // nil,
+            &sled.Write {
+                Name: "alpine",
+                Device: "sda",
+                Image: imgBytes,
+            },
             //&sled.Kexec {},
             nil,
         }
@@ -46,14 +55,16 @@ func main() {
 
         // put in a key-value for our mac address
         // this is eth0 mac address, the value needs to be a sled.CommandSet
-        // FIXME: change everytime based on generated mac
-        err = bucket.Put([]byte("52:54:00:fa:54:8d"), []byte(jsonWipe))
+        // NOTE: this has to change every time, no way to set mac via ip link in u-root
+        err = bucket.Put([]byte("52:54:00:ae:77:18"), []byte(jsonWipe))
 
         // add a few other for shit and giggle
         err = bucket.Put([]byte("52:54:00:b1:64:a1"), []byte("42"))
         return nil
     })
 
+    // 'tis a silly thing to print db when one saves a 1gb image to it.
+    /*
     db.View(func(tx *bolt.Tx) error {
         // Assume bucket exists and has keys
         b := tx.Bucket([]byte("clients"))
@@ -66,4 +77,5 @@ func main() {
 
         return nil
     })
+    */
 }
