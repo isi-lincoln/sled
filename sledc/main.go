@@ -75,7 +75,9 @@ func wipe(device string) {
 
     size := getBlockDeviceSize(device)
 
-    dev, err := os.Open(fmt.Sprintf("/dev/%s", device))
+    dev, err := os.OpenFile(fmt.Sprintf("/dev/%s", device),
+            os.O_CREATE|os.O_WRONLY|os.O_TRUNC,
+        0666)
     if err != nil {
         log.Fatalf("write: error opening device %v", err)
     }
@@ -85,7 +87,6 @@ func wipe(device string) {
     // golang while loop
     for N < size {
         n, err := dev.Write(buf)
-        log.Printf("N: %d, n: %d, err: %v\n", N, n, err)
         N += int64(n)
         if n < 1024 {
             break

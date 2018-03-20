@@ -47,7 +47,7 @@ func main() {
         // put in a key-value for our mac address
         // this is eth0 mac address, the value needs to be a sled.CommandSet
         // FIXME: change everytime based on generated mac
-        err = bucket.Put([]byte("52:54:00:ff:0c:b1"), []byte(jsonWipe))
+        err = bucket.Put([]byte("52:54:00:fa:54:8d"), []byte(jsonWipe))
 
         // add a few other for shit and giggle
         err = bucket.Put([]byte("52:54:00:b1:64:a1"), []byte("42"))
