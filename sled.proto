@@ -30,9 +30,13 @@ message Wipe {
 }
 
 message Write {
-  string name = 1;
-  string device = 2;
-  bytes image = 3;
+  string device     = 1;
+  string imageName  = 2;
+  bytes  image      = 3;
+  string kernelName = 4;
+  bytes  kernel     = 5;
+  string initrdName = 6;
+  bytes  initrd     = 7;
 }
 
 

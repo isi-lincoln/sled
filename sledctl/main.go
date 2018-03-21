@@ -87,8 +87,8 @@ func write(server, mac, name, device string) {
 	_, err := cli.Update(context.TODO(), &sled.UpdateRequest{
 		Mac: mac,
 		CommandSet: &sled.CommandSet{Write: &sled.Write{
-			Name:   name,
-			Device: device,
+			ImageName: name,
+			Device:    device,
 		}},
 	})
 	if err != nil {

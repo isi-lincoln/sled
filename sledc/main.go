@@ -53,7 +53,7 @@ func main() {
 		wipe(resp.Wipe.Device)
 	}
 	if resp.Write != nil {
-		write(resp.Write.Image, resp.Write.Device)
+		write(resp.Write.Device, resp.Write.Image, resp.Write.Kernel, resp.Write.Initrd)
 	}
 	if resp.Kexec != nil {
 		kexec(resp.Kexec.Kernel, resp.Kexec.Append, resp.Kexec.Initrd)
@@ -105,7 +105,40 @@ func wipe(device string) {
 }
 
 // Write the binary image to the specified device.
-func write(image []byte, device string) {
+func write(device string, image, kernel, initrd []byte) {
+	log.Infof("copying kernel to memory")
+
+	kdev, err := os.OpenFile(fmt.Sprintf("/tmp/kernel"),
+		os.O_CREATE|os.O_WRONLY|os.O_TRUNC,
+		0666)
+	if err != nil {
+		log.Fatalf("write: error opening device %v", err)
+	}
+	n, err := kdev.Write(kernel)
+	if err != nil {
+		log.Fatalf("write: error writing image - %v", err)
+	}
+	if n < len(kernel) {
+		log.Fatalf("write: failed to write kernel %d of %d bytes", n, len(kernel))
+	}
+	kdev.Close()
+
+	log.Infof("copying initrd to memory")
+	idev, err := os.OpenFile(fmt.Sprintf("/tmp/initrd"),
+		os.O_CREATE|os.O_WRONLY|os.O_TRUNC,
+		0666)
+	if err != nil {
+		log.Fatalf("write: error opening device %v", err)
+	}
+	n, err = idev.Write(initrd)
+	if err != nil {
+		log.Fatalf("write: error writing image - %v", err)
+	}
+	if n < len(initrd) {
+		log.Fatalf("write: failed to write kernel %d of %d bytes", n, len(initrd))
+	}
+	idev.Close()
+
 	log.Infof("writing image to device %s", device)
 
 	if !blockDeviceExists(device) {
@@ -125,12 +158,12 @@ func write(image []byte, device string) {
 	}
 	defer dev.Close()
 
-	n, err := dev.Write(image)
+	n, err = dev.Write(image)
 	if err != nil {
 		log.Fatalf("write: error writing image - %v", err)
 	}
 	if n < len(image) {
-		log.Fatalf("write: failed to write full image %d or %d bytes", n, len(image))
+		log.Fatalf("write: failed to write full image %d of %d bytes", n, len(image))
 	}
 }
 

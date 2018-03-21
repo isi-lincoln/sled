@@ -45,16 +45,39 @@ func (s *Sledd) Command(
 	})
 
 	if cs.Write != nil {
-		filename := fmt.Sprintf("/var/img/%s", cs.Write.Name)
-		_, err := os.Stat(filename)
+		imageName := fmt.Sprintf("/var/img/%s", cs.Write.ImageName)
+		_, err := os.Stat(imageName)
 		if err != nil {
-			log.Errorf("command: non-existant write image %s", cs.Write.Name)
+			log.Errorf("command: non-existant write image %s", cs.Write.ImageName)
 			cs.Write = nil
 		}
-		cs.Write.Image, err = ioutil.ReadFile(filename)
+		cs.Write.Image, err = ioutil.ReadFile(imageName)
 		if err != nil {
 			log.Errorf("command: error reading image %v", err)
 		}
+
+		kernelName := fmt.Sprintf("/var/img/%s", cs.Write.KernelName)
+		_, err = os.Stat(kernelName)
+		if err != nil {
+			log.Errorf("command: non-existant write kernel %s", cs.Write.KernelName)
+			cs.Write = nil
+		}
+		cs.Write.Kernel, err = ioutil.ReadFile(kernelName)
+		if err != nil {
+			log.Errorf("command: error reading kernel %v", err)
+		}
+
+		initrdName := fmt.Sprintf("/var/img/%s", cs.Write.InitrdName)
+		_, err = os.Stat(initrdName)
+		if err != nil {
+			log.Errorf("command: non-existant write initrd %s", cs.Write.InitrdName)
+			cs.Write = nil
+		}
+		cs.Write.Initrd, err = ioutil.ReadFile(initrdName)
+		if err != nil {
+			log.Errorf("command: error reading initrd %v", err)
+		}
+
 	}
 
 	return cs, nil
