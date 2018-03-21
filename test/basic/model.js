@@ -12,7 +12,7 @@ server = {
   name: 'server',
   image: 'fedora-27',
   cpu: { cores: 2 },
-  memory: { capacity: GB(4) },
+  memory: { capacity: GB(8) },
   //mounts: [{ source: env.PWD+'/../..', point: '/tmp/code' }]
   mounts: [
     { source: '/home/lthurlow/go/src/github.com/ceftb/sled/', point: '/tmp/code' },

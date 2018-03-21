@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  name = "github.com/boltdb/bolt"
+  packages = ["."]
+  revision = "2f1ce7a837dcb8da3ec595b1dac9d0632f0f99e8"
+  version = "v1.3.1"
+
+[[projects]]
   name = "github.com/coreos/bbolt"
   packages = ["."]
   revision = "583e8937c61f1af6513608ccc75c97b6abdf4ff9"
@@ -132,6 +138,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "26b423dc0a2704ae4d99b1d8ea2472529a2d6f4b785e494b3cb5562bda1807fd"
+  inputs-digest = "4ebf687980d157be1228b4a4d427fa3ae38e49ef4768a0cf6b97ade633459bb2"
   solver-name = "gps-cdcl"
   solver-version = 1
