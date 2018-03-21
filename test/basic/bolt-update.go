@@ -29,6 +29,8 @@ func main() {
 
 		// alpine image in bytes! in memory!
 		imgBytes, err := ioutil.ReadFile("/var/img/alpine.img")
+		kerBytes, err := ioutil.ReadFile("/var/img/vmlinuz-hardened")
+		initBytes, err := ioutil.ReadFile("/var/img/initramfs-hardened")
 
 		// create a bogus wipe sled request
 		// device is the block device name (/sys/block) not (/dev), e.g. sda
@@ -39,9 +41,13 @@ func main() {
 			//&sled.Write {},
 			// nil,
 			&sled.Write{
-				Name:   "alpine",
-				Device: "sda",
-				Image:  imgBytes,
+				ImageName:  "alpine",
+				Device:     "sda",
+				Image:      imgBytes,
+				KernelName: "vmlinuz-hardened",
+				Kernel:     kerBytes,
+				InitrdName: "initramfs-hardened",
+				Initrd:     initBytes,
 			},
 			//&sled.Kexec {},
 			nil,
@@ -56,7 +62,7 @@ func main() {
 		// put in a key-value for our mac address
 		// this is eth0 mac address, the value needs to be a sled.CommandSet
 		// NOTE: this has to change every time, no way to set mac via ip link in u-root
-		err = bucket.Put([]byte("52:54:00:3b:25:06"), []byte(jsonWipe))
+		err = bucket.Put([]byte("52:54:00:18:cc:84"), []byte(jsonWipe))
 
 		// add a few other for shit and giggle
 		err = bucket.Put([]byte("52:54:00:b1:64:a1"), []byte("42"))
