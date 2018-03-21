@@ -41,16 +41,23 @@ func main() {
 			//&sled.Write {},
 			// nil,
 			&sled.Write{
-				ImageName:  "alpine",
-				Device:     "sda",
-				Image:      imgBytes,
-				KernelName: "vmlinuz-hardened",
+				ImageName: "alpine",
+				Device:    "sda",
+				Image:     imgBytes,
+				//KernelName: "vmlinuz-hardened",
+				KernelName: "4.15.12-kernel",
 				Kernel:     kerBytes,
 				InitrdName: "initramfs-hardened",
 				Initrd:     initBytes,
 			},
-			//&sled.Kexec {},
 			nil,
+			/*
+				&sled.Kexec{
+					Append: "$(cat /proc/cmdline)",
+					Kernel: "/tmp/kernel",
+					Initrd: "/tmp/initrd",
+				},
+			*/
 		}
 
 		// now we need to marshall it to write out
@@ -62,7 +69,7 @@ func main() {
 		// put in a key-value for our mac address
 		// this is eth0 mac address, the value needs to be a sled.CommandSet
 		// NOTE: this has to change every time, no way to set mac via ip link in u-root
-		err = bucket.Put([]byte("52:54:00:18:cc:84"), []byte(jsonWipe))
+		err = bucket.Put([]byte("52:54:00:35:11:7b"), []byte(jsonWipe))
 
 		// add a few other for shit and giggle
 		err = bucket.Put([]byte("52:54:00:b1:64:a1"), []byte("42"))
