@@ -56,7 +56,7 @@ func main() {
 		// put in a key-value for our mac address
 		// this is eth0 mac address, the value needs to be a sled.CommandSet
 		// NOTE: this has to change every time, no way to set mac via ip link in u-root
-		err = bucket.Put([]byte("52:54:00:c6:af:75"), []byte(jsonWipe))
+		err = bucket.Put([]byte("52:54:00:3b:25:06"), []byte(jsonWipe))
 
 		// add a few other for shit and giggle
 		err = bucket.Put([]byte("52:54:00:b1:64:a1"), []byte("42"))

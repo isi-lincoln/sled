@@ -111,12 +111,15 @@ func write(image []byte, device string) {
 	if !blockDeviceExists(device) {
 		log.Fatalf("block device %s does not exist", device)
 	}
+	// getBlockDeviceSize is in bytes
 	size := getBlockDeviceSize(device)
 	if int64(len(image)) > size {
 		log.Fatalf("image is larger than target device - %d > %d", len(image), size)
 	}
 
-	dev, err := os.Open(fmt.Sprintf("/dev/%s", device))
+	dev, err := os.OpenFile(fmt.Sprintf("/dev/%s", device),
+		os.O_CREATE|os.O_WRONLY|os.O_TRUNC,
+		0666)
 	if err != nil {
 		log.Fatalf("write: error opening device %v", err)
 	}
@@ -187,6 +190,8 @@ func getBlockDeviceSize(device string) int64 {
 	if err != nil {
 		log.Fatalf("error parsing /sys/block/%s/size = %v - %s", err, content)
 	}
+	// size is in disk sectors, multiply by 512 to get bytes
+	size = size * 512
 	return size
 }
 
