@@ -27,7 +27,7 @@ sledd issues commands to clients. Commands are issued to clients in groups. A gr
 sledd keeps track of clients by mac address. The internal bolt db has a single bucket called 'clients'. That bucket maps client mac addresses to command sets. sled also has a collection of images it can serve to clients. These images are kept in `/var/img`. Each `name` entry in the `write` is a reference to a filename located at `/var/img`.
 
 
-#### Local Testing.
+## Local Testing
 
 `cd test/basic`
 
