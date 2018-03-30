@@ -36,14 +36,14 @@ func main() {
 	}
 
 	cmdWrite := &cobra.Command{
-		Use:   "write [mac] [name] [disk device]",
+		Use:   "write [mac] [image] [kernel] [initrd] [disk device]",
 		Short: "set the write command for a device",
 		Long: "set the write command for a device, " +
-			"the image must be provided out of band to /var/img/[name] " +
+			"the image,kernel,initrd must be provided out of band to /var/img/" +
 			"on the sled server",
-		Args: cobra.MinimumNArgs(3),
+		Args: cobra.MinimumNArgs(5),
 		Run: func(cmd *cobra.Command, args []string) {
-			write(server, args[0], args[1], args[2])
+			write(server, args[0], args[1], args[2], args[3], args[4])
 		},
 	}
 
@@ -80,15 +80,17 @@ func wipe(server, mac, disk string) {
 	}
 }
 
-func write(server, mac, name, device string) {
+func write(server, mac, image, kernel, initrd, device string) {
 	conn, cli := initClient(server)
 	defer conn.Close()
 
 	_, err := cli.Update(context.TODO(), &sled.UpdateRequest{
 		Mac: mac,
 		CommandSet: &sled.CommandSet{Write: &sled.Write{
-			Name:   name,
-			Device: device,
+			ImageName:  image,
+			KernelName: kernel,
+			InitrdName: initrd,
+			Device:     device,
 		}},
 	})
 	if err != nil {

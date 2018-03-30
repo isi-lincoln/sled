@@ -1,7 +1,7 @@
 #!/bin/bash
 
 qemu-system-x86_64 \
-  -kernel ~/code/linux/vanilla/linux-stable/arch/x86/boot/bzImage \
+  -kernel 4.15.11-kernel \
   -initrd ~/code/ceftb/sled/build/initramfs.cpio \
   -append console=ttyS0 \
   -nographic \

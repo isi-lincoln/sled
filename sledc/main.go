@@ -4,14 +4,15 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 	"io/ioutil"
+	"math"
 	"net"
 	"os"
 	"os/exec"
 	"strconv"
-
-	log "github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
+	"strings" // remove newline from file
 
 	"github.com/ceftb/sled"
 )
@@ -36,11 +37,11 @@ func main() {
 	mac := ""
 	for _, x := range ifxs {
 		if x.Name == *ifx {
-			x.HardwareAddr.String()
+			mac = x.HardwareAddr.String()
 		}
 	}
 	if mac == "" {
-		log.Fatal("interface %s not found", *ifx)
+		log.Fatalf("interface %s not found", *ifx)
 	}
 
 	resp, err := sledd.Command(context.TODO(), &sled.CommandRequest{mac})
@@ -52,7 +53,7 @@ func main() {
 		wipe(resp.Wipe.Device)
 	}
 	if resp.Write != nil {
-		write(resp.Write.Image, resp.Write.Device)
+		write(resp.Write.Device, resp.Write.Image, resp.Write.Kernel, resp.Write.Initrd)
 	}
 	if resp.Kexec != nil {
 		kexec(resp.Kexec.Kernel, resp.Kexec.Append, resp.Kexec.Initrd)
@@ -75,12 +76,16 @@ func wipe(device string) {
 
 	size := getBlockDeviceSize(device)
 
-	dev, err := os.Open(fmt.Sprintf("/dev/%s", device))
+	dev, err := os.OpenFile(fmt.Sprintf("/dev/%s", device),
+		os.O_CREATE|os.O_WRONLY|os.O_TRUNC,
+		0666)
 	if err != nil {
 		log.Fatalf("write: error opening device %v", err)
 	}
 
-	var N int64
+	// explicitly set N to 0
+	var N int64 = 0
+	// golang while loop, set each 1k block to 0
 	for N < size {
 		n, err := dev.Write(buf)
 		N += int64(n)
@@ -91,50 +96,80 @@ func wipe(device string) {
 			log.Fatalf("error zeroing disk: %v", err)
 		}
 	}
+	log.Printf("%d bytes zero'd in /dev/%s", size, device)
 
 	if N < size {
-		log.Warning("only zeroed %d of $d bytes on disk", N, size)
+		log.Warningf("only zeroed %d of %d bytes on disk", N, size)
+	} else {
+		log.Println("device wiped")
 	}
-
-	/*
-		cmd := exec.Command(
-			"dd",
-			"if=/dev/null",
-			fmt.Sprintf("of=/dev/%s", device),
-			"bs=1",
-			fmt.Sprintf("count=%d", size),
-		)
-		out, err := cmd.CombinedOutput()
-		if err != nil {
-			log.Fatalf("wipe: could not execute dd - %v, %v", err, out)
-		}
-	*/
 }
 
 // Write the binary image to the specified device.
-func write(image []byte, device string) {
+func write(device string, image, kernel, initrd []byte) {
+	log.Infof("copying kernel to memory")
+
+	// write kernel to tmp, shouldnt be need to have more than one kernel
+	kdev, err := os.OpenFile(fmt.Sprintf("/tmp/kernel"),
+		os.O_CREATE|os.O_WRONLY|os.O_TRUNC,
+		0666)
+	if err != nil {
+		log.Fatalf("write: error opening device %v", err)
+	}
+	n, err := kdev.Write(kernel)
+	if err != nil {
+		log.Fatalf("write: error writing image - %v", err)
+	}
+	if n < len(kernel) {
+		log.Fatalf("write: failed to write kernel %d of %d bytes", n, len(kernel))
+	}
+	kdev.Close()
+
+	log.Infof("copying initrd to memory")
+
+	// write initramfs to tmp as well, again okay to overwrite
+	idev, err := os.OpenFile(fmt.Sprintf("/tmp/initrd"),
+		os.O_CREATE|os.O_WRONLY|os.O_TRUNC,
+		0666)
+	if err != nil {
+		log.Fatalf("write: error opening device %v", err)
+	}
+	n, err = idev.Write(initrd)
+	if err != nil {
+		log.Fatalf("write: error writing image - %v", err)
+	}
+	if n < len(initrd) {
+		log.Fatalf("write: failed to write kernel %d of %d bytes", n, len(initrd))
+	}
+	idev.Close()
+
 	log.Infof("writing image to device %s", device)
 
 	if !blockDeviceExists(device) {
 		log.Fatalf("block device %s does not exist", device)
 	}
+	// getBlockDeviceSize is in bytes
 	size := getBlockDeviceSize(device)
 	if int64(len(image)) > size {
 		log.Fatalf("image is larger than target device - %d > %d", len(image), size)
 	}
 
-	dev, err := os.Open(fmt.Sprintf("/dev/%s", device))
+	dev, err := os.OpenFile(fmt.Sprintf("/dev/%s", device),
+		os.O_CREATE|os.O_WRONLY|os.O_TRUNC,
+		0666)
 	if err != nil {
 		log.Fatalf("write: error opening device %v", err)
 	}
 	defer dev.Close()
 
-	n, err := dev.Write(image)
+	n, err = dev.Write(image)
 	if err != nil {
 		log.Fatalf("write: error writing image - %v", err)
 	}
 	if n < len(image) {
-		log.Fatalf("write: failed to write full image %d or %d bytes", n, len(image))
+		log.Fatalf("write: failed to write full image %d of %d bytes", n, len(image))
+	} else {
+		log.Printf("wrote %d bytes to /dev/%s", n, device)
 	}
 }
 
@@ -142,7 +177,9 @@ func write(image []byte, device string) {
 func kexec(kernel, append, initrd string) {
 	log.Infof("kexec - %s %s %s", kernel, append, initrd)
 
-	out, err := exec.Command("kexec", "-l", kernel, append, initrd).CombinedOutput()
+	// kexec -l -cmdline args -i initramfs kernel following u-root/golang-flag parsing
+	out, err := exec.Command("kexec", "-l", "-cmdline", append,
+		"-i", initrd, kernel).CombinedOutput()
 	if err != nil {
 		log.Fatalf("kexec load failed - %v : %s", err, out)
 	}
@@ -188,15 +225,26 @@ func getBlockDeviceSize(device string) int64 {
 	if err != nil {
 		log.Fatalf("error opening /sys/block/%s/size - %v", err)
 	}
-	size, err := strconv.ParseInt(string(content), 10, 0)
+	// get rid of the nasty newline if it exists
+	contentStr := strings.TrimSuffix(string(content), "\n")
+	size, err := strconv.ParseInt(contentStr, 10, 0)
 	if err != nil {
 		log.Fatalf("error parsing /sys/block/%s/size = %v - %s", err, content)
 	}
+	// size is in disk sectors, multiply by 512 to get bytes
+	size = size * 512
 	return size
 }
 
+// 8 GB max image size$
+const maxMsgSize = math.MaxUint32
+
 func initClient() (*grpc.ClientConn, sled.SledClient) {
-	conn, err := grpc.Dial(*server+":6000", grpc.WithInsecure())
+	conn, err := grpc.Dial(
+		*server+":6000",
+		grpc.WithInsecure(),
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMsgSize)),
+		grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(maxMsgSize)))
 	if err != nil {
 		log.Fatalf("could not connect to sled server - %v", err)
 	}

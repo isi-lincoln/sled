@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"net"
 	"os"
 
@@ -33,27 +34,52 @@ func (s *Sledd) Command(
 		if v == nil {
 			return nil
 		} else {
-			var cs sled.CommandSet
 			err := json.Unmarshal(v, cs)
 			if err != nil {
 				log.Errorf("command: malformed command set @ %s", e.Mac)
+				log.Error(err)
 				return nil
 			}
 			return nil
 		}
 	})
 
+	// for image, kernel, initramfs, load each of them into memory based
+	// on the path stored in the bolt db
 	if cs.Write != nil {
-		filename := fmt.Sprintf("/var/img/%s", cs.Write.Name)
-		_, err := os.Stat(filename)
+		imageName := fmt.Sprintf("/var/img/%s", cs.Write.ImageName)
+		_, err := os.Stat(imageName)
 		if err != nil {
-			log.Errorf("command: non-existant write image %s", cs.Write.Name)
+			log.Errorf("command: non-existant write image %s", cs.Write.ImageName)
 			cs.Write = nil
 		}
-		cs.Write.Image, err = ioutil.ReadFile(filename)
+		cs.Write.Image, err = ioutil.ReadFile(imageName)
 		if err != nil {
 			log.Errorf("command: error reading image %v", err)
 		}
+
+		kernelName := fmt.Sprintf("/var/img/%s", cs.Write.KernelName)
+		_, err = os.Stat(kernelName)
+		if err != nil {
+			log.Errorf("command: non-existant kernel %s", cs.Write.KernelName)
+			cs.Write = nil
+		}
+		cs.Write.Kernel, err = ioutil.ReadFile(kernelName)
+		if err != nil {
+			log.Errorf("command: error reading kernel %v", err)
+		}
+
+		initrdName := fmt.Sprintf("/var/img/%s", cs.Write.InitrdName)
+		_, err = os.Stat(initrdName)
+		if err != nil {
+			log.Errorf("command: non-existant initramfs %s", cs.Write.InitrdName)
+			cs.Write = nil
+		}
+		cs.Write.Initrd, err = ioutil.ReadFile(initrdName)
+		if err != nil {
+			log.Errorf("command: error reading initramfs %v", err)
+		}
+
 	}
 
 	return cs, nil
@@ -68,7 +94,7 @@ func (s *Sledd) Update(
 
 	err := db.Update(func(tx *bolt.Tx) error {
 
-		// grab a reference to the clients bucker
+		// grab a reference to the clients bucket
 		b := tx.Bucket([]byte("clients"))
 		if b == nil {
 			return fmt.Errorf("update: no client bucket")
@@ -133,10 +159,16 @@ func csMerge(current, update *sled.CommandSet) *sled.CommandSet {
 
 var db *bolt.DB
 
+// 8 GB max image size
+const maxMsgSize = math.MaxUint32
+
 func main() {
 	fmt.Println("sled-server")
 
-	grpcServer := grpc.NewServer()
+	// overwrite grpc Msg sizes to allow larger images to be sent
+	grpcServer := grpc.NewServer(
+		grpc.MaxRecvMsgSize(maxMsgSize),
+		grpc.MaxSendMsgSize(maxMsgSize))
 	sled.RegisterSledServer(grpcServer, &Sledd{})
 
 	l, err := net.Listen("tcp", "0.0.0.0:6000")
@@ -151,7 +183,7 @@ func main() {
 	defer db.Close()
 
 	db.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucket([]byte("clients"))
+		_, err := tx.CreateBucketIfNotExists([]byte("clients"))
 		if err != nil {
 			return fmt.Errorf("create bucket: %s", err)
 		}
@@ -160,5 +192,4 @@ func main() {
 
 	log.Info("Listening on tcp://0.0.0.0:6000")
 	grpcServer.Serve(l)
-
 }
