@@ -44,6 +44,8 @@ func (s *Sledd) Command(
 		}
 	})
 
+	// for image, kernel, initramfs, load each of them into memory based
+	// on the path stored in the bolt db
 	if cs.Write != nil {
 		imageName := fmt.Sprintf("/var/img/%s", cs.Write.ImageName)
 		_, err := os.Stat(imageName)
@@ -59,7 +61,7 @@ func (s *Sledd) Command(
 		kernelName := fmt.Sprintf("/var/img/%s", cs.Write.KernelName)
 		_, err = os.Stat(kernelName)
 		if err != nil {
-			log.Errorf("command: non-existant write kernel %s", cs.Write.KernelName)
+			log.Errorf("command: non-existant kernel %s", cs.Write.KernelName)
 			cs.Write = nil
 		}
 		cs.Write.Kernel, err = ioutil.ReadFile(kernelName)
@@ -70,12 +72,12 @@ func (s *Sledd) Command(
 		initrdName := fmt.Sprintf("/var/img/%s", cs.Write.InitrdName)
 		_, err = os.Stat(initrdName)
 		if err != nil {
-			log.Errorf("command: non-existant write initrd %s", cs.Write.InitrdName)
+			log.Errorf("command: non-existant initramfs %s", cs.Write.InitrdName)
 			cs.Write = nil
 		}
 		cs.Write.Initrd, err = ioutil.ReadFile(initrdName)
 		if err != nil {
-			log.Errorf("command: error reading initrd %v", err)
+			log.Errorf("command: error reading initramfs %v", err)
 		}
 
 	}
@@ -92,7 +94,7 @@ func (s *Sledd) Update(
 
 	err := db.Update(func(tx *bolt.Tx) error {
 
-		// grab a reference to the clients bucker
+		// grab a reference to the clients bucket
 		b := tx.Bucket([]byte("clients"))
 		if b == nil {
 			return fmt.Errorf("update: no client bucket")
@@ -163,6 +165,7 @@ const maxMsgSize = math.MaxUint32
 func main() {
 	fmt.Println("sled-server")
 
+	// overwrite grpc Msg sizes to allow larger images to be sent
 	grpcServer := grpc.NewServer(
 		grpc.MaxRecvMsgSize(maxMsgSize),
 		grpc.MaxSendMsgSize(maxMsgSize))

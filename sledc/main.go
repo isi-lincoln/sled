@@ -22,7 +22,6 @@ var ifx = flag.String("interface", "eth0", "the interface to use for client id")
 
 func main() {
 
-	log.Printf("version: 0.0.1")
 	flag.Parse()
 
 	conn, sledd := initClient()
@@ -86,7 +85,7 @@ func wipe(device string) {
 
 	// explicitly set N to 0
 	var N int64 = 0
-	// golang while loop
+	// golang while loop, set each 1k block to 0
 	for N < size {
 		n, err := dev.Write(buf)
 		N += int64(n)
@@ -110,6 +109,7 @@ func wipe(device string) {
 func write(device string, image, kernel, initrd []byte) {
 	log.Infof("copying kernel to memory")
 
+	// write kernel to tmp, shouldnt be need to have more than one kernel
 	kdev, err := os.OpenFile(fmt.Sprintf("/tmp/kernel"),
 		os.O_CREATE|os.O_WRONLY|os.O_TRUNC,
 		0666)
@@ -126,6 +126,8 @@ func write(device string, image, kernel, initrd []byte) {
 	kdev.Close()
 
 	log.Infof("copying initrd to memory")
+
+	// write initramfs to tmp as well, again okay to overwrite
 	idev, err := os.OpenFile(fmt.Sprintf("/tmp/initrd"),
 		os.O_CREATE|os.O_WRONLY|os.O_TRUNC,
 		0666)
@@ -175,7 +177,7 @@ func write(device string, image, kernel, initrd []byte) {
 func kexec(kernel, append, initrd string) {
 	log.Infof("kexec - %s %s %s", kernel, append, initrd)
 
-	// kexec -l -cmdline args -i initramfs kernel
+	// kexec -l -cmdline args -i initramfs kernel following u-root/golang-flag parsing
 	out, err := exec.Command("kexec", "-l", "-cmdline", append,
 		"-i", initrd, kernel).CombinedOutput()
 	if err != nil {
