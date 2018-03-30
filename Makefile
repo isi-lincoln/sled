@@ -16,7 +16,7 @@ sled.pb.go: sled.proto
 
 build/initramfs.cpio: $(GOPATH)/bin/u-root | build
 	u-root -format=cpio -build=bb -o $@ \
-		github.com/u-root/u-root/cmds/{ps,ls,ip,io,dhclient,wget,tcz,cat,pwd,builtin,boot,dd,dmesg,ed,find,grep,kexec,kill,modprobe,lsmod,mount,mv,ping,umount,uname,vboot,which,shutdown} \
+		github.com/u-root/u-root/cmds/{ps,ls,ip,io,dhclient,wget,tcz,cat,pwd,builtin,boot,dd,dmesg,ed,find,grep,kexec,kill,modprobe,lsmod,mount,mv,ping,umount,uname,vboot,which,shutdown,cp,mkdir,rm} \
 		github.com/elves/elvish \
 		github.com/ceftb/sled/sledc
 	./update-cpio.sh

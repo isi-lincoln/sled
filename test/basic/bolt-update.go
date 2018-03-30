@@ -28,9 +28,12 @@ func main() {
 		}
 
 		// alpine image in bytes! in memory!
-		imgBytes, err := ioutil.ReadFile("/var/img/alpine.img")
-		kerBytes, err := ioutil.ReadFile("/var/img/vmlinuz-hardened")
-		initBytes, err := ioutil.ReadFile("/var/img/initramfs-hardened")
+		//imgBytes, err := ioutil.ReadFile("/var/img/alpine.img")
+		imgBytes, err := ioutil.ReadFile("/var/img/mini-ubuntu.img")
+		//kerBytes, err := ioutil.ReadFile("/var/img/alpine/hardened/vmlinuz-hardened")
+		//initBytes, err := ioutil.ReadFile("/var/img/alpine/hardened/initramfs-hardened")
+		kerBytes, err := ioutil.ReadFile("/var/img/fedora/vmlinuz-4.15.10-fedora")
+		initBytes, err := ioutil.ReadFile("/var/img/fedora/initramfs-4.15.10-fedora")
 
 		// create a bogus wipe sled request
 		// device is the block device name (/sys/block) not (/dev), e.g. sda
@@ -41,23 +44,22 @@ func main() {
 			//&sled.Write {},
 			// nil,
 			&sled.Write{
-				ImageName: "alpine",
+				ImageName: "mini-ubuntu.img",
 				Device:    "sda",
 				Image:     imgBytes,
-				//KernelName: "vmlinuz-hardened",
-				KernelName: "4.15.12-kernel",
+				//KernelName: "alpine/hardened/vmlinuz-hardened",
+				KernelName: "fedora/vmlinuz-4.15.10-fedora",
 				Kernel:     kerBytes,
-				InitrdName: "initramfs-hardened",
+				//InitrdName: "alpine/hardened/initramfs-hardened",
+				InitrdName: "fedora/initramfs-4.15.10-fedora",
 				Initrd:     initBytes,
 			},
-			nil,
-			/*
-				&sled.Kexec{
-					Append: "$(cat /proc/cmdline)",
-					Kernel: "/tmp/kernel",
-					Initrd: "/tmp/initrd",
-				},
-			*/
+			//nil,
+			&sled.Kexec{
+				Append: "console=ttyS1 root=/dev/sda1 rootfstype=ext4",
+				Kernel: "/tmp/kernel",
+				Initrd: "/tmp/initrd",
+			},
 		}
 
 		// now we need to marshall it to write out
@@ -69,7 +71,10 @@ func main() {
 		// put in a key-value for our mac address
 		// this is eth0 mac address, the value needs to be a sled.CommandSet
 		// NOTE: this has to change every time, no way to set mac via ip link in u-root
-		err = bucket.Put([]byte("52:54:00:35:11:7b"), []byte(jsonWipe))
+		err = bucket.Put([]byte("52:54:00:32:eb:6a"), []byte(jsonWipe))
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		// add a few other for shit and giggle
 		err = bucket.Put([]byte("52:54:00:b1:64:a1"), []byte("42"))
@@ -77,18 +82,16 @@ func main() {
 	})
 
 	// 'tis a silly thing to print db when one saves a 1gb image to it.
-	/*
-	   db.View(func(tx *bolt.Tx) error {
-	       // Assume bucket exists and has keys
-	       b := tx.Bucket([]byte("clients"))
+	db.View(func(tx *bolt.Tx) error {
+		// Assume bucket exists and has keys
+		b := tx.Bucket([]byte("clients"))
 
-	       c := b.Cursor()
+		c := b.Cursor()
 
-	       for k, v := c.First(); k != nil; k, v = c.Next() {
-	           log.Printf("key=%s, value=%s\n", k, v)
-	       }
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+			log.Printf("key=%s\n", k)
+		}
 
-	       return nil
-	   })
-	*/
+		return nil
+	})
 }

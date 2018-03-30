@@ -22,6 +22,7 @@ var ifx = flag.String("interface", "eth0", "the interface to use for client id")
 
 func main() {
 
+	log.Printf("version: 0.0.1")
 	flag.Parse()
 
 	conn, sledd := initClient()
@@ -96,6 +97,7 @@ func wipe(device string) {
 			log.Fatalf("error zeroing disk: %v", err)
 		}
 	}
+	log.Printf("%d bytes zero'd in /dev/%s", size, device)
 
 	if N < size {
 		log.Warningf("only zeroed %d of %d bytes on disk", N, size)
@@ -164,6 +166,8 @@ func write(device string, image, kernel, initrd []byte) {
 	}
 	if n < len(image) {
 		log.Fatalf("write: failed to write full image %d of %d bytes", n, len(image))
+	} else {
+		log.Printf("wrote %d bytes to /dev/%s", n, device)
 	}
 }
 
@@ -171,7 +175,9 @@ func write(device string, image, kernel, initrd []byte) {
 func kexec(kernel, append, initrd string) {
 	log.Infof("kexec - %s %s %s", kernel, append, initrd)
 
-	out, err := exec.Command("kexec", "-l", kernel, append, initrd).CombinedOutput()
+	// kexec -l -cmdline args -i initramfs kernel
+	out, err := exec.Command("kexec", "-l", "-cmdline", append,
+		"-i", initrd, kernel).CombinedOutput()
 	if err != nil {
 		log.Fatalf("kexec load failed - %v : %s", err, out)
 	}
