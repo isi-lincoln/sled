@@ -7,4 +7,4 @@ before_install:
   - dep ensure
   - ./test/travis/build_kernel.sh
 script:
-  - go test
+  - go test -v ./test/...
