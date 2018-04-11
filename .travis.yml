@@ -1,12 +1,17 @@
 sudo: false
 language: go
 go:
-  - master
+- master
 before_install:
-  - go get -u github.com/golang/dep/cmd/dep
-  - dep ensure
-  - ./test/travis/build_kernel.sh
-  - make clean
-  - make
-script:
-  - go test -v ./test/...
+- go get -u github.com/golang/dep/cmd/dep
+- dep ensure
+jobs:
+  include:
+    - stage: unit test sled code
+      script: go test -v ./test/...
+    - stage: build kernel & initramfs
+      script: "./test/travis/build_kernel.sh"
+      script: make
+notifications:
+  slack:
+    secure: h3ObLry4YdEj23Pj9h6ZzUF/HmnzUOlI9LEFgjrFYWMzRPOTLAaurzvOO+MI9gBvW5iS92gfcSUHgcY618z1U53h59YQnjQS3qmX742Kwx0XHRvraWiU+qzVAyRdo7RyLTJWqP0f4IjybZHMOxBMl1C0Jqj6fBgjnnVKbN4BprSOtM6bYXGBBH+bEBfCcc0PT3hr5QvJOEaFSNLKvtl6K4SdsFsr37ez9nUzI7UAjQWFM0d1XeTCNUyWtf+WZUNGsY3XxDuWwPsuy5eEVCu3pAFKpRR1PyXjeDva5YEHQ+YekKdgEohTfJNRxKj7juLiDNu3fDIVu4OEdUTP47gK6xfQW2fY6kkthUmESGp74uO82zIxuqmi2xJtZLygmMMWrgKG/23HT9MNBTBkAo9lVOdSDwirHThtEHlFY8A0QYKtjXbCFtqjv4M4vx4nWtlLKpzL69blR88S7L/AodPk9w+aJz6q4ayx4GlO4mP+osESxjQmIKpAFkcH1Q8v5xOkz/pKsVVKI5+z3ggtn5BlaGpoXFQITxDmns9EcsLze0bAwp9cTxt1zGj6AixMnG0Y7SiYATt8eu6viAyiJ0gOT4SseSrs5iocNUnNBldPi74qHWZbN8gPoSX2moKvv/fiV+aHq3QX+MaDxWCSSryclWY3PgVE9lUGb88v6mtJg6w=
