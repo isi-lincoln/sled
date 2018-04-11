@@ -3,14 +3,20 @@ language: go
 go:
 - master
 before_install:
-- go get -u github.com/golang/dep/cmd/dep
-- dep ensure
+  - sudo apt-get -qq update
+  - sudo apt-get install -y realpath
+before_script:
+  - go get -u github.com/golang/dep/cmd/dep
+  - dep ensure
+  - mkdir -p /tmp/mods/lib
+  - "./test/travis/install_cpio.sh"
 jobs:
   include:
     - stage: unit test sled code
       script: go test -v ./test/...
-    - stage: build kernel & initramfs
+    - stage: build kernel
       script: "./test/travis/build_kernel.sh"
+    - stage: bake code into initramfs
       script: make
 notifications:
   slack:
