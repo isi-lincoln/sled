@@ -1,5 +1,7 @@
 # sled - System Loader for Ephemeral Devices
 
+[![Build Status](https://travis-ci.org/ceftb/sled.svg?branch=master)](https://travis-ci.org/ceftb/sled)
+
 
 sled is a system software loader designed to run in the [u-root](https://u-root.tk) initramfs. sled is designed to support loading systems onto devices that are ephemeral, for example shared devices that get reloaded with new systems for every user that uses them. The sled software consists of a client, server and API.
 
