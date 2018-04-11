@@ -25,8 +25,7 @@ build/initramfs.cpio: $(GOPATH)/bin/u-root | build
 .ONESHELL:
 $(GOPATH)/bin/u-root:
 	go get -u github.com/u-root/u-root
-	cd $(GOPATH)/src/github.com/u-root/u-root
-	dep ensure
+	cd $(GOPATH)/src/github.com/u-root/u-root && dep ensure -add github.com/ceftb/sled/sledc && dep ensure -vendor-only -v
 
 clean:
 	rm -rf build
