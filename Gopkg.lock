@@ -138,6 +138,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/ziutek/telnet"
+  packages = ["."]
+  revision = "c3b780dc415b28894076b4ec975ea3ea69e3980f"
+
+[[projects]]
+  branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   revision = "85f98707c97e11569271e4d9b3d397e079c4f4d0"
@@ -231,6 +237,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "eb2cb67ffcd6c3499117d9eed4cfa80e3e680eb26376bf993c4916b4bdc99030"
+  inputs-digest = "9c64bb77fb1ccf585a894c588105f41892af453d39cc5af9ed7288c2ac837772"
   solver-name = "gps-cdcl"
   solver-version = 1
