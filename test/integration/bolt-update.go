@@ -10,7 +10,7 @@ import (
 
 /*
 * This code is meant to verify the Wipe, Write, and Kexec state machine
-* implemented via grpc calls from sledd to sledc
+* implemented via grpc calls from sledd to sledc.  This code is run on sledd.
  */
 
 func main() {
@@ -32,15 +32,10 @@ func main() {
 			log.Fatal(err)
 		}
 
-		// Test using alpine image, kernel, initramfs
-		//imgBytes, err := ioutil.ReadFile("/var/img/alpine.img")
-		//kerBytes, err := ioutil.ReadFile("/var/img/alpine/hardened/vmlinuz-hardened")
-		//initBytes, err := ioutil.ReadFile("/var/img/alpine/hardened/initramfs-hardened")
-
 		// Test using ubuntu image, with fedora kernel, initramfs
-		imgBytes, err := ioutil.ReadFile("/var/img/mini-ubuntu.img")
-		kerBytes, err := ioutil.ReadFile("/var/img/fedora/vmlinuz-4.15.10-fedora")
-		initBytes, err := ioutil.ReadFile("/var/img/fedora/initramfs-4.15.10-fedora")
+		imgBytes, err := ioutil.ReadFile("/var/img/image-ubuntu-test.img")
+		kerBytes, err := ioutil.ReadFile("/var/img/vmlinuz-fedora-test")
+		initBytes, err := ioutil.ReadFile("/var/img/initramfs-fedora-test")
 
 		// create a bogus wipe sled request
 		// device is the block device name (/sys/block) not (/dev), e.g. sda
@@ -51,15 +46,12 @@ func main() {
 				Device: "sda",
 			},
 			&sled.Write{
-				//ImageName: "alpine.img",
-				ImageName: "mini-ubuntu.img",
-				Device:    "sda",
-				Image:     imgBytes,
-				//KernelName: "alpine/hardened/vmlinuz-hardened",
-				KernelName: "fedora/vmlinuz-4.15.10-fedora",
+				ImageName:  "image-ubuntu-test.img",
+				Device:     "sda",
+				Image:      imgBytes,
+				KernelName: "vmlinuz-fedora-test",
 				Kernel:     kerBytes,
-				//InitrdName: "alpine/hardened/initramfs-hardened",
-				InitrdName: "fedora/initramfs-4.15.10-fedora",
+				InitrdName: "initramfs-fedora-test",
 				Initrd:     initBytes,
 			},
 			&sled.Kexec{
@@ -77,8 +69,7 @@ func main() {
 
 		// put in a key-value for our mac address
 		// this is eth0 mac address, the value needs to be a sled.CommandSet
-		// NOTE: this has to change every time, no way to set mac via ip link in u-root
-		err = bucket.Put([]byte("52:54:00:32:eb:6a"), []byte(jsonWipe))
+		err = bucket.Put([]byte("00:00:00:00:00:01"), []byte(jsonWipe))
 		if err != nil {
 			log.Fatal(err)
 		}

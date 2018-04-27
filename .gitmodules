@@ -1,0 +1,3 @@
+[submodule "test/travis/sled-test"]
+	path = test/travis/sled-test
+	url = https://github.com/isi-lincoln/sled-test.git
