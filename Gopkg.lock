@@ -89,6 +89,12 @@
   version = "v0.2"
 
 [[projects]]
+  name = "github.com/rcgoodfellow/walrustf"
+  packages = ["go"]
+  revision = "700ff93349cb142a95385f426c43ed70533e0261"
+  version = "v0.1"
+
+[[projects]]
   branch = "master"
   name = "github.com/reiver/go-oi"
   packages = ["."]
@@ -225,6 +231,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "509ea4bc9de8565089dc937bbba646a12a0a1f2d2230cdd617180e10e3a212ff"
+  inputs-digest = "eb2cb67ffcd6c3499117d9eed4cfa80e3e680eb26376bf993c4916b4bdc99030"
   solver-name = "gps-cdcl"
   solver-version = 1
