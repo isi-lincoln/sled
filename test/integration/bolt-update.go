@@ -68,8 +68,9 @@ func main() {
 		}
 
 		// put in a key-value for our mac address
-		// this is eth0 mac address, the value needs to be a sled.CommandSet
-		err = bucket.Put([]byte("00:00:00:00:00:01"), []byte(jsonWipe))
+		// this is eth1 mac address, the value needs to be a sled.CommandSet
+		clientMAC := "00:00:00:00:00:01"
+		err = bucket.Put([]byte(clientMAC), []byte(jsonWipe))
 		if err != nil {
 			log.Fatal(err)
 		}

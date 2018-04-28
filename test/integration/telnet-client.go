@@ -18,6 +18,10 @@ import (
  * now, client and server are ready, you can run this function
  * to unit test setting the client MAC address
  */
+
+// TODO: Write client function to set IP addr on eth1
+// ip link set eth1 up
+// ip addr add 10.0.0.2/24 dev eth1
 func main() {
 	iface := "eth1"
 	macAddr := "00:00:00:00:00:01"
