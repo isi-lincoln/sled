@@ -3,23 +3,30 @@ package main
 import (
 	"fmt"
 	"github.com/ziutek/telnet"
+	"io/ioutil"
 	"log"
 	"regexp"
 	"strings"
 )
 
 func main() {
-	// TODO: programatically find the port
-	t, err := telnet.Dial("tcp", "localhost:4007")
+	iface := "eth1"
+	macAddr := "00:00:00:00:00:01"
+	// set the mac address
+	SetClientMAC(iface, macAddr)
+	// test that the mac address was set correctly
+	success, mac := CheckClientMAC(iface, macAddr)
+	log.Printf("%v %v", success, mac)
+}
+
+func SetClientMAC(iface, macAddr string) {
+	host, port := findClientPort()
+	t, err := telnet.Dial("tcp", fmt.Sprintf("%s:%s", host, port))
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
 
-	iface := "eth1"
-	macAddr := "00:00:00:00:00:01"
-
 	buf := make([]byte, 512)
-	lastBuf := make([]byte, 512)
 
 	// set the mac address for the interface for bolt-db
 	buf = []byte(fmt.Sprintf("ip link set %s address %s\r\n", iface, macAddr))
@@ -33,6 +40,18 @@ func main() {
 		log.Fatalf("%v", err)
 	}
 
+	// need to close the telnet connection... or else!
+	t.Close()
+}
+
+func CheckClientMAC(iface, macAddr string) (bool, string) {
+	host, port := findClientPort()
+	t, err := telnet.Dial("tcp", fmt.Sprintf("%s:%s", host, port))
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+
+	buf := make([]byte, 512)
 	// show the link information
 	buf = []byte("ip link show\r\n")
 	_, err = t.Write(buf)
@@ -40,28 +59,21 @@ func main() {
 		log.Fatalf("%v", err)
 	}
 	// read out bytes until '%' to clear output for this command
-	_, err = t.ReadBytes('%')
+	buf, err = t.ReadBytes('%')
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
 
-	// clear buffer before we start writing to it with info
-	buf = []byte("")
+	// close the breach (telnet)
+	t.Close()
 
-	// check the output of ip link show
-	buf, err = t.ReadBytes('%')
-	// while our slice is not empty
-	for !emptySlice(buf) {
-		if err != nil {
-			log.Fatalf("%v", err)
-		}
-		//log.Printf("%s", buf)
-		lastBuf = buf
-		buf, err = t.ReadBytes('%')
+	// actually test what we expect should be the mac address
+	mac := getLinkMAC(iface, buf)
+	if mac == macAddr {
+		return true, mac
+	} else {
+		return false, mac
 	}
-
-	mac := getLinkMAC(iface, lastBuf)
-	log.Printf("%s", mac)
 
 }
 
@@ -91,4 +103,21 @@ func getLinkMAC(iface string, buf []byte) string {
 	// get the mac address
 	Re := regexp.MustCompile("([0-9a-f][0-9a-f]:){5}[0-9a-f][0-9a-f]")
 	return Re.FindString(macLine)
+}
+
+// may fail given multiple serial types
+func findClientPort() (host, port string) {
+	content, err := ioutil.ReadFile(".rvn/dom_sled-basic_client.xml")
+	if err != nil {
+		log.Fatal(err)
+	}
+	// TODO: do a for each compile, check <protocol type="telnet"></protocol>
+	Re := regexp.MustCompile("(?s)<serial type=\"tcp\">.+</serial>")
+	subString := Re.FindString(string(content))
+	//log.Printf("%s", subString)
+	Re = regexp.MustCompile("host=\"(?P<host>[a-z]*)\"")
+	host = Re.FindStringSubmatch(subString)[1]
+	Re = regexp.MustCompile("service=\"(?P<service>[0-9]*)\"")
+	port = Re.FindStringSubmatch(subString)[1]
+	return
 }
