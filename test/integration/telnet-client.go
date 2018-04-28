@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"github.com/ziutek/telnet"
 	"io/ioutil"
-	"log"
 	"regexp"
 	"strings"
 )
@@ -19,77 +19,39 @@ import (
  * to unit test setting the client MAC address
  */
 
-// TODO: Write client function to set IP addr on eth1
-// ip link set eth1 up
-// ip addr add 10.0.0.2/24 dev eth1
 func main() {
 	iface := "eth1"
 	macAddr := "00:00:00:00:00:01"
+	ipAddr := "10.0.0.2"
+
+	log.SetLevel(log.DebugLevel)
+
 	// set the mac address
 	SetClientMAC(iface, macAddr)
+
 	// test that the mac address was set correctly
 	success, mac := CheckClientMAC(iface, macAddr)
 	log.Printf("%v %v", success, mac)
-	sledRet := RunSledc("10.0.0.1")
+
+	// set the client interface UP
+	SetClientIfaceUP(iface)
+
+	// test that the client interface is up
+	success, link := CheckClientIfaceUP(iface)
+	log.Printf("%v %v", success, link)
+
+	// set the client IP address
+	SetClientIP(iface, ipAddr)
+
+	//test that the client IP address was set correctly
+	success, ip := CheckClientIP(iface, ipAddr)
+	log.Printf("%v %v", success, ip)
+
+	//sledRet := RunSledc("10.0.0.1")
+	//log.Printf("%s", sledRet)
 }
 
-func SetClientMAC(iface, macAddr string) {
-	host, port := findClientPort()
-	t, err := telnet.Dial("tcp", fmt.Sprintf("%s:%s", host, port))
-	if err != nil {
-		log.Fatalf("%v", err)
-	}
-
-	buf := make([]byte, 512)
-
-	// set the mac address for the interface for bolt-db
-	buf = []byte(fmt.Sprintf("ip link set %s address %s\r\n", iface, macAddr))
-	_, err = t.Write(buf)
-	if err != nil {
-		log.Fatalf("%v", err)
-	}
-	// read out bytes until '%' to clear output for this command
-	_, err = t.ReadBytes('%')
-	if err != nil {
-		log.Fatalf("%v", err)
-	}
-
-	// need to close the telnet connection... or else!
-	t.Close()
-}
-
-func CheckClientMAC(iface, macAddr string) (bool, string) {
-	host, port := findClientPort()
-	t, err := telnet.Dial("tcp", fmt.Sprintf("%s:%s", host, port))
-	if err != nil {
-		log.Fatalf("%v", err)
-	}
-
-	buf := make([]byte, 512)
-	// show the link information
-	buf = []byte("ip link show\r\n")
-	_, err = t.Write(buf)
-	if err != nil {
-		log.Fatalf("%v", err)
-	}
-	// read out bytes until '%' to clear output for this command
-	buf, err = t.ReadBytes('%')
-	if err != nil {
-		log.Fatalf("%v", err)
-	}
-
-	// close the breach (telnet)
-	t.Close()
-
-	// actually test what we expect should be the mac address
-	mac := getLinkMAC(iface, buf)
-	if mac == macAddr {
-		return true, mac
-	} else {
-		return false, mac
-	}
-
-}
+// ----------- RUN SLED ------------ //
 
 func RunSledc(server string) string {
 	host, port := findClientPort()
@@ -109,6 +71,126 @@ func RunSledc(server string) string {
 		log.Fatalf("%v", err)
 	}
 	return string(buf)
+}
+
+// ----------- SET CLIENT SETTINGS ------------ //
+
+// set iface up - unit testable
+func SetClientIfaceUP(iface string) {
+	host, port := findClientPort()
+	t, err := telnet.Dial("tcp", fmt.Sprintf("%s:%s", host, port))
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+
+	buf := make([]byte, 512)
+
+	// set the mac address for the interface for bolt-db
+	buf = []byte(fmt.Sprintf("ip link set %s up\r\n", iface))
+	_, err = t.Write(buf)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+	// read out bytes until '%' to clear output for this command
+	buf, err = t.ReadBytes('%')
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+	log.Debugln("SetClientIfaceUP: " + string(buf))
+	t.Close()
+}
+
+func SetClientIP(iface, ipAddr string) {
+	host, port := findClientPort()
+	t, err := telnet.Dial("tcp", fmt.Sprintf("%s:%s", host, port))
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+
+	buf := make([]byte, 512)
+
+	// set the mac address for the interface for bolt-db
+	buf = []byte(fmt.Sprintf("ip addr add %s/24 dev %s\r\n", ipAddr, iface))
+	_, err = t.Write(buf)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+	// read out bytes until '%' to clear output for this command
+	buf, err = t.ReadBytes('%')
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+
+	log.Debugln("SetClientIP: " + string(buf))
+
+	t.Close()
+}
+
+func SetClientMAC(iface, macAddr string) {
+	host, port := findClientPort()
+	t, err := telnet.Dial("tcp", fmt.Sprintf("%s:%s", host, port))
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+
+	buf := make([]byte, 512)
+
+	// set the mac address for the interface for bolt-db
+	buf = []byte(fmt.Sprintf("ip link set %s address %s\r\n", iface, macAddr))
+	_, err = t.Write(buf)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+	// read out bytes until '%' to clear output for this command
+	buf, err = t.ReadBytes('%')
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+
+	log.Debugln("SetClientMAC: " + string(buf))
+	// need to close the telnet connection... or else!
+	t.Close()
+}
+
+// ----------- VERIFY CLIENT SETTINGS ------------ //
+
+func CheckClientMAC(iface, macAddr string) (bool, string) {
+	buf := make([]byte, 512)
+	buf = getClientLinkInfo()
+
+	// actually test what we expect should be the mac address
+	mac := getLinkMAC(iface, buf)
+	if mac == macAddr {
+		return true, mac
+	} else {
+		return false, mac
+	}
+}
+
+func CheckClientIfaceUP(iface string) (bool, string) {
+	buf := make([]byte, 512)
+	buf = getClientLinkInfo()
+
+	// actually test what we expect should be the mac address
+	line := getLinkIface(iface, buf)
+	if line == "UP" {
+		return true, line
+	} else {
+		return false, line
+	}
+}
+
+func CheckClientIP(iface, ipAddr string) (bool, string) {
+	buf := make([]byte, 512)
+	buf = getClientAddrInfo()
+
+	// actually test what we expect should be the mac address
+	ip := getLinkIP(iface, buf)
+	if ip == ipAddr {
+		return true, ip
+	} else {
+		return false, ip
+	}
 }
 
 // ----------- HELPER FUNCTIONS -------------- //
@@ -141,6 +223,37 @@ func getLinkMAC(iface string, buf []byte) string {
 	return Re.FindString(macLine)
 }
 
+// given ip link output, get the mac address for an interface
+func getLinkIface(iface string, buf []byte) string {
+	// find the index that has the interface
+	indexBegin := strings.Index(string(buf), iface)
+	// find the first new line, start here
+	indexFirst := strings.Index(string(buf[indexBegin:]), "\n")
+	// find the next new line, this is the new region we care about
+	statusLine := string(buf[indexBegin+1 : indexBegin+indexFirst])
+	// get the mac address
+	Re := regexp.MustCompile("(UP|DOWN)")
+	return Re.FindString(statusLine)
+}
+
+// given ip link output, get the mac address for an interface
+func getLinkIP(iface string, buf []byte) string {
+	// find the index that has the interface
+	indexBegin := strings.Index(string(buf), iface)
+	// find the first new line, skip it, find next
+	indexSkip := strings.Index(string(buf[indexBegin:]), "\n")
+	indexFirst := strings.Index(string(buf[indexBegin+indexSkip+1:]), "\n")
+	// all the +1 are to move beyond the newlines that are found.
+	indexFirst = indexBegin + indexSkip + indexFirst + 1
+	// find the next new line, this is the new region we care about
+	indexLast := strings.Index(string(buf[indexFirst+1:]), "\n")
+	ipLine := string(buf[indexFirst+1 : indexFirst+indexLast])
+	// find the ip address with the inet, partly to avoid finding broadcast
+	Re := regexp.MustCompile("inet (?P<ip>[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3})")
+	// instance 0 is the string itself, instance 1 is the ip address
+	return FindStringSubmatch(ipLine)[1]
+}
+
 // may fail given multiple serial types
 func findClientPort() (host, port string) {
 	content, err := ioutil.ReadFile(".rvn/dom_sled-basic_client.xml")
@@ -156,4 +269,54 @@ func findClientPort() (host, port string) {
 	Re = regexp.MustCompile("service=\"(?P<service>[0-9]*)\"")
 	port = Re.FindStringSubmatch(subString)[1]
 	return
+}
+
+func getClientLinkInfo() []byte {
+	host, port := findClientPort()
+	t, err := telnet.Dial("tcp", fmt.Sprintf("%s:%s", host, port))
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+
+	buf := make([]byte, 512)
+	// show the link information
+	buf = []byte("ip link show\r\n")
+	_, err = t.Write(buf)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+	// read out bytes until '%' to clear output for this command
+	buf, err = t.ReadBytes('%')
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+
+	// close the breach (telnet)
+	t.Close()
+	return buf
+}
+
+func getClientAddrInfo() []byte {
+	host, port := findClientPort()
+	t, err := telnet.Dial("tcp", fmt.Sprintf("%s:%s", host, port))
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+
+	buf := make([]byte, 512)
+	// show the link information
+	buf = []byte("ip addr\r\n")
+	_, err = t.Write(buf)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+	// read out bytes until '%' to clear output for this command
+	buf, err = t.ReadBytes('%')
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+
+	// close the breach (telnet)
+	t.Close()
+	return buf
 }

@@ -86,15 +86,10 @@ func TestRvnBootSimple(t *testing.T) {
 
 	// get the server IP
 	serverIP := getNodeIP("server")
-
-	// do hacky ssh exec - would like an ssh pipe
-	// this is only for the server IP, which is necessary to run bolt update on server
-	// TODO: test this
 	cmd := exec.Command(
 		"ssh -o StrictHostKeyChecking=no -i /var/rvn/ssh/rvn rvn@%s /tmp/code/test/integration/bolt-update", serverIP)
 
-	// do telnet to connection to client
-	// TODO: implement this
+	RunSledc("10.0.0.1")
 
 	// tear down all the raven configuration
 	err = stopRaven()
