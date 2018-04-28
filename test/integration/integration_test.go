@@ -3,7 +3,6 @@ package integration
 import (
 	"errors"
 	"github.com/rcgoodfellow/raven/rvn"
-	walrus "github.com/rcgoodfellow/walrustf/go" // use for verifying comms.
 	log "github.com/sirupsen/logrus"
 	"github.com/sparrc/go-ping" // pingwait
 	"testing"
@@ -88,21 +87,11 @@ func TestRvnBootSimple(t *testing.T) {
 	// get the server IP
 	serverIP := getNodeIP("server")
 
-	wtfClient, err := walrus.NewClient(clientIP, "sled-system-test", "client")
-	if err != nil {
-		t.Errorf("Walrus error with client: %v", err)
-	}
-	wtfServer, err := walrus.NewClient(serverIP, "sled-system-test", "server")
-	if err != nil {
-		t.Errorf("Walrus error with server: %v", err)
-	}
-
 	// do hacky ssh exec - would like an ssh pipe
 	// this is only for the server IP, which is necessary to run bolt update on server
 	// TODO: test this
 	cmd := exec.Command(
 		"ssh -o StrictHostKeyChecking=no -i /var/rvn/ssh/rvn rvn@%s /tmp/code/test/integration/bolt-update", serverIP)
-	wtfServer.ok("ran bolt-db update, added client mac address")
 
 	// do telnet to connection to client
 	// TODO: implement this
