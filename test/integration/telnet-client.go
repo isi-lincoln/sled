@@ -9,6 +9,15 @@ import (
 	"strings"
 )
 
+/*
+ * This should be run after running:
+ * sudo -E rvn build
+ * sudo -E rvn deploy
+ * sudo -E rvn pingwait server
+ * sudo -E rvn configure
+ * now, client and server are ready, you can run this function
+ * to unit test setting the client MAC address
+ */
 func main() {
 	iface := "eth1"
 	macAddr := "00:00:00:00:00:01"
@@ -17,6 +26,7 @@ func main() {
 	// test that the mac address was set correctly
 	success, mac := CheckClientMAC(iface, macAddr)
 	log.Printf("%v %v", success, mac)
+	sledRet := RunSledc("10.0.0.1")
 }
 
 func SetClientMAC(iface, macAddr string) {
@@ -76,6 +86,28 @@ func CheckClientMAC(iface, macAddr string) (bool, string) {
 	}
 
 }
+
+func RunSledc(server string) string {
+	host, port := findClientPort()
+	t, err := telnet.Dial("tcp", fmt.Sprintf("%s:%s", host, port))
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+	buf := make([]byte, 512)
+	// show the link information
+	buf = []byte(fmt.Sprintf("sledc -server %s\r\n", server))
+	_, err = t.Write(buf)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+	buf, err = t.ReadBytes('%')
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+	return string(buf)
+}
+
+// ----------- HELPER FUNCTIONS -------------- //
 
 // return true is slice is 'empty' == ' %' for sled
 // necessary to not try and poll reading

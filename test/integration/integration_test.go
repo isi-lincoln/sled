@@ -4,7 +4,6 @@ import (
 	"errors"
 	"github.com/rcgoodfellow/raven/rvn"
 	walrus "github.com/rcgoodfellow/walrustf/go" // use for verifying comms.
-	telnet "github.com/reiver/go-telnet"         // needed for u-root client
 	log "github.com/sirupsen/logrus"
 	"github.com/sparrc/go-ping" // pingwait
 	"testing"
@@ -79,8 +78,12 @@ func TestRvnBootSimple(t *testing.T) {
 	}
 	// do test here ~~~~~~`
 
-	// get the client IP
-	clientIP := getNodeIP("client")
+	macAddr := "00:00:00:00:00:01"
+	SetClientMAC("eth1", macAddr)
+	success, mac := CheckClientMAC("eth1", macAddr)
+	if !success {
+		t.Errorf("Client MAC not set! wanted: %v, got: %v", macAddr, mac)
+	}
 
 	// get the server IP
 	serverIP := getNodeIP("server")
