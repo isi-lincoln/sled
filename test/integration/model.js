@@ -12,7 +12,7 @@ server = {
   name: 'server',
   image: 'fedora-27',
   cpu: { cores: 2 },
-  memory: { capacity: GB(8) },
+  memory: { capacity: GB(16) },
   mounts: [
     // where code resides
     { source: env.PWD+'/../../', point: '/tmp/code' },

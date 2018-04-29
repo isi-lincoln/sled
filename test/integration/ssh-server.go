@@ -14,22 +14,22 @@ import (
  */
 
 func main() {
+	macAddr := "00:00:00:00:00:01"
 	iface := "eth1"
 	ipAddr := "10.0.0.1"
 
 	SetServerIface(iface)
 
-	log.Printf("set worked")
-
 	success, link := CheckServerIface(iface)
 	log.Printf("%v %v", success, link)
-
-	log.Printf("check iface worked")
 
 	SetServerIP(iface, ipAddr)
 
 	success, ip := CheckServerIP(iface, ipAddr)
 	log.Printf("%v %v", success, ip)
+
+	success, boltEntry := SetAndCheckBoltDB(macAddr)
+	log.Printf("%v %v", success, boltEntry)
 }
 
 // ----------- SET SERVER SETTINGS ------------ //
@@ -51,13 +51,20 @@ func SetServerIP(iface, ip string) {
 	}
 }
 
-func SetAndCheckBoltDB() bool {
+func SetAndCheckBoltDB(macAddr string) (bool, string) {
 	serverIP := getRavenIP("server")
-	out, err := exec.Command("ssh", "-o", "StrictHostKeyChecking=no", "-i", "/var/rvn/ssh/rvn", fmt.Sprintf("rvn@%s", serverIP), "/tmp/code/test/integration/bolt-update").Output()
+	out, err := exec.Command("ssh", "-o", "StrictHostKeyChecking=no", "-i", "/var/rvn/ssh/rvn", fmt.Sprintf("rvn@%s", serverIP), "sudo /tmp/code/test/integration/bolt-update").Output()
 	if err != nil {
 		log.Fatalf("%v : %s", err, string(out))
 	}
-	return true
+	Re := regexp.MustCompile("([0-9a-f][0-9a-f]:){5}[0-9a-f][0-9a-f]")
+	// instance 0 is the string itself, instance 1 is the ip address
+	mac := Re.FindString(string(out))
+	if mac == macAddr {
+		return true, mac
+	} else {
+		return false, mac
+	}
 }
 
 // ----------- CHECK SERVER FUNCTIONS -------------- //
