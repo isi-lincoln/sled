@@ -51,6 +51,15 @@ func SetServerIP(iface, ip string) {
 	}
 }
 
+func SetAndCheckBoltDB() bool {
+	serverIP := getRavenIP("server")
+	out, err := exec.Command("ssh", "-o", "StrictHostKeyChecking=no", "-i", "/var/rvn/ssh/rvn", fmt.Sprintf("rvn@%s", serverIP), "/tmp/code/test/integration/bolt-update").Output()
+	if err != nil {
+		log.Fatalf("%v : %s", err, string(out))
+	}
+	return true
+}
+
 // ----------- CHECK SERVER FUNCTIONS -------------- //
 
 func CheckServerIface(iface string) (bool, string) {

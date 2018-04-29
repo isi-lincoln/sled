@@ -1,7 +1,8 @@
 package main
 
 import (
-	"encoding/json"
+	"bytes"
+	"encoding/gob"
 	"github.com/boltdb/bolt"
 	"github.com/ceftb/sled"
 	"io/ioutil"
@@ -33,10 +34,12 @@ func main() {
 		}
 
 		// Test using ubuntu image, with fedora kernel, initramfs
-		imgBytes, err := ioutil.ReadFile("/var/img/image-ubuntu-test.img")
+		imgBytes, err := ioutil.ReadFile("/var/img/mini-ubuntu.img")
+		log.Printf("image loaded")
 		kerBytes, err := ioutil.ReadFile("/var/img/vmlinuz-fedora-test")
+		log.Printf("kernel loaded")
 		initBytes, err := ioutil.ReadFile("/var/img/initramfs-fedora-test")
-
+		log.Printf("initram loaded")
 		// create a bogus wipe sled request
 		// device is the block device name (/sys/block) not (/dev), e.g. sda
 		// unlike the actual requests, the images will not be stored in the bolt db
@@ -46,9 +49,10 @@ func main() {
 				Device: "sda",
 			},
 			&sled.Write{
-				ImageName:  "image-ubuntu-test.img",
-				Device:     "sda",
-				Image:      imgBytes,
+				ImageName: "image-ubuntu-test.img",
+				Device:    "sda",
+				Image:     imgBytes,
+				//Image:      []byte("test"),
 				KernelName: "vmlinuz-fedora-test",
 				Kernel:     kerBytes,
 				InitrdName: "initramfs-fedora-test",
@@ -61,16 +65,18 @@ func main() {
 			},
 		}
 
-		// now we need to marshall it to write out
-		jsonWipe, err := json.Marshal(sledCmd)
+		// FIXME: memory issue when encoding, wether json or gob
+		var buf bytes.Buffer
+		enc := gob.NewEncoder(&buf)
+		err = enc.Encode(sledCmd)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal("encode error:", err)
 		}
 
 		// put in a key-value for our mac address
 		// this is eth1 mac address, the value needs to be a sled.CommandSet
 		clientMAC := "00:00:00:00:00:01"
-		err = bucket.Put([]byte(clientMAC), []byte(jsonWipe))
+		err = bucket.Put([]byte(clientMAC), buf.Bytes())
 		if err != nil {
 			log.Fatal(err)
 		}
