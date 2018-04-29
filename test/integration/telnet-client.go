@@ -47,8 +47,8 @@ func main() {
 	success, ip := CheckClientIP(iface, ipAddr)
 	log.Printf("%v %v", success, ip)
 
-	//sledRet := RunSledc("10.0.0.1")
-	//log.Printf("%s", sledRet)
+	sledRet := RunSledc("10.0.0.1")
+	log.Printf("%s", sledRet)
 }
 
 // ----------- RUN SLED ------------ //
@@ -251,7 +251,7 @@ func getLinkIP(iface string, buf []byte) string {
 	// find the ip address with the inet, partly to avoid finding broadcast
 	Re := regexp.MustCompile("inet (?P<ip>[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3})")
 	// instance 0 is the string itself, instance 1 is the ip address
-	return FindStringSubmatch(ipLine)[1]
+	return Re.FindStringSubmatch(ipLine)[1]
 }
 
 // may fail given multiple serial types
