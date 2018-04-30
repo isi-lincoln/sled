@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"github.com/ceftb/sled/test/integration/shared"
 	"github.com/rcgoodfellow/raven/rvn"
@@ -29,42 +30,44 @@ func main() {
 	success, ip := CheckServerIP(iface, ipAddr)
 	log.Printf("%v %v", success, ip)
 
-	success, boltEntry := SetAndCheckBoltDB(macAddr)
-	log.Printf("%v %v", success, boltEntry)
+	err, success, boltEntry := SetAndCheckBoltDB(macAddr)
+	log.Printf("%v %v %v", err, success, boltEntry)
 }
 
 // ----------- SET SERVER SETTINGS ------------ //
 
-func SetServerIface(iface string) {
+func SetServerIface(iface string) error {
 	serverIP := getRavenIP("server")
 	out, err := exec.Command("ssh", "-o", "StrictHostKeyChecking=no", "-i", "/var/rvn/ssh/rvn", fmt.Sprintf("rvn@%s", serverIP), fmt.Sprintf("sudo ip link set %s up", iface)).Output()
 	if err != nil {
-		log.Fatalf("%v : %s", err, string(out))
+		return errors.New(fmt.Sprintf("%v : %s", err, false, string(out)))
 	}
+	return nil
 }
 
 // ip addr add 10.0.0.1/24 dev eth1
-func SetServerIP(iface, ip string) {
+func SetServerIP(iface, ip string) error {
 	serverIP := getRavenIP("server")
 	out, err := exec.Command("ssh", "-o", "StrictHostKeyChecking=no", "-i", "/var/rvn/ssh/rvn", fmt.Sprintf("rvn@%s", serverIP), fmt.Sprintf("sudo ip addr add %s/24 dev %s", ip, iface)).Output()
 	if err != nil {
-		log.Fatalf("%v : %s", err, string(out))
+		return errors.New(fmt.Sprintf("%v : %s", err, false, string(out)))
 	}
+	return nil
 }
 
-func SetAndCheckBoltDB(macAddr string) (bool, string) {
+func SetAndCheckBoltDB(macAddr string) (error, bool, string) {
 	serverIP := getRavenIP("server")
 	out, err := exec.Command("ssh", "-o", "StrictHostKeyChecking=no", "-i", "/var/rvn/ssh/rvn", fmt.Sprintf("rvn@%s", serverIP), fmt.Sprintf("sudo %s", shared.BoltDBPath)).Output()
 	if err != nil {
-		log.Fatalf("%v : %s", err, string(out))
+		return errors.New(string(out)), false, string(out)
 	}
 	Re := regexp.MustCompile("([0-9a-f][0-9a-f]:){5}[0-9a-f][0-9a-f]")
 	// instance 0 is the string itself, instance 1 is the ip address
 	mac := Re.FindString(string(out))
 	if mac == macAddr {
-		return true, mac
+		return nil, true, mac
 	} else {
-		return false, mac
+		return nil, false, mac
 	}
 }
 
