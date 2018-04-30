@@ -71,6 +71,16 @@ func SetAndCheckBoltDB(macAddr string) (error, bool, string) {
 	}
 }
 
+// TODO: get this to work so sledc can run
+func RunSledd() error {
+	serverIP := getRavenIP("server")
+	_, err := exec.Command("ssh", "-o", "StrictHostKeyChecking=no", "-i", "/var/rvn/ssh/rvn", fmt.Sprintf("rvn@%s", serverIP), fmt.Sprintf("sudo nohup %s &", shared.SleddPath)).Output()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // ----------- CHECK SERVER FUNCTIONS -------------- //
 
 func CheckServerIface(iface string) (bool, string) {

@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"testing"
+	//"time"
 )
 
 func setupServer() error {
@@ -98,9 +99,20 @@ func TestRvnBootSimple(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	log.Infof("Client: Running Sledc")
-	client.RunSledc(shared.ServerIP)
+	log.Infof("Server: Starting Sledd")
 	// run sledc on client
+	err = server.RunSledd()
+	if err != nil {
+		stopRaven()
+		t.Fatalf("%v", err)
+	}
+
+	log.Infof("Client: Running Sledc")
+	// run sledc on client
+	sledRet := client.RunSledc(shared.ServerIP)
+	log.Infof("%s", sledRet)
+
+	//time.Sleep(time.Minute * 2)
 
 	// tear down all the raven configuration
 	err = stopRaven()

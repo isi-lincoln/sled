@@ -71,6 +71,7 @@ func RunSledc(server string) string {
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
+	t.Close()
 	return string(buf)
 }
 
