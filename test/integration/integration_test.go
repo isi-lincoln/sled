@@ -107,6 +107,8 @@ func TestRvnBootSimple(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
+	//time.Sleep(time.Minute * 2)
+
 	log.Infof("Client: Running Sledc")
 	// run sledc on client
 	sledRet := client.RunSledc(shared.ServerIP)
