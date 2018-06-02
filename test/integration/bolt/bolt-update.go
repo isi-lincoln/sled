@@ -34,7 +34,7 @@ func main() {
 		}
 
 		// Test using ubuntu image, with fedora kernel, initramfs
-		imgBytes, err := ioutil.ReadFile("/var/img/mini-ubuntu.img")
+		imgBytes, err := ioutil.ReadFile("/var/img/ubuntu-1804-nsystemd.img")
 		kerBytes, err := ioutil.ReadFile("/var/img/vmlinuz-fedora-test")
 		initBytes, err := ioutil.ReadFile("/var/img/initramfs-fedora-test")
 		// create a bogus wipe sled request
@@ -46,7 +46,7 @@ func main() {
 				Device: "sda",
 			},
 			&sled.Write{
-				ImageName: "image-ubuntu-test.img",
+				ImageName: "ubuntu-1804-nsystemd.img",
 				Device:    "sda",
 				Image:     imgBytes,
 				//Image:      []byte("test"),
@@ -56,7 +56,7 @@ func main() {
 				Initrd:     initBytes,
 			},
 			&sled.Kexec{
-				Append: "console=ttyS1 root=/dev/sda1 rootfstype=ext4",
+				Append: "console=ttyS1 root=/dev/sda1 rootfstype=ext4 rw",
 				Kernel: "/tmp/kernel",
 				Initrd: "/tmp/initrd",
 			},

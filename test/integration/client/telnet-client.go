@@ -1,13 +1,17 @@
 package client
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"github.com/ceftb/sled/test/integration/shared"
 	log "github.com/sirupsen/logrus"
 	"github.com/ziutek/telnet"
 	"io/ioutil"
+	"os/exec"
 	"regexp"
 	"strings"
+	"time"
 )
 
 /*
@@ -48,34 +52,64 @@ func main() {
 	success, ip := CheckClientIP(iface, ipAddr)
 	log.Printf("%v %v", success, ip)
 
-	sledRet := RunSledc("10.0.0.1")
-	log.Printf("%s", sledRet)
+	err := RunSledc(shared.ServerIP, iface)
+	if err != nil {
+		log.Fatalf(fmt.Sprintf("%v", err))
+	}
+
+	err = WaitForClient(300)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
 }
 
 // ----------- RUN SLED ------------ //
 
-func RunSledc(server string) string {
+//FIXME: this needs to context timeout, rather than connection timeout
+func RunSledc(server, iface string) error {
 	host, port := findClientPort()
+
+	// this is arbitrary timeout, should include some time to download image
+	// we ignore the error because we purposefully timeout, may cause error down line
 	t, err := telnet.Dial("tcp", fmt.Sprintf("%s:%s", host, port))
 	if err != nil {
-		log.Fatalf("%v", err)
+		return err
 	}
+
 	buf := make([]byte, 512)
 	// show the link information
-	buf = []byte(fmt.Sprintf("sledc -server %s\r\n", server))
+	buf = []byte(fmt.Sprintf("sledc -interface %s -server %s\r\n", iface, server))
+	log.Debugf(fmt.Sprintf("%s", buf))
 	_, err = t.Write(buf)
 	if err != nil {
-		log.Fatalf("%v", err)
-	}
-	buf, err = t.ReadBytes('%')
-	if err != nil {
-		log.Fatalf("%v", err)
+		return err
 	}
 	t.Close()
-	return string(buf)
+	return nil
 }
 
 // ----------- SET CLIENT SETTINGS ------------ //
+func WaitForClient(timeout int32) error {
+	// in go, use context for command exec with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
+	defer cancel()
+
+	// Create the command with our context
+	cmd := exec.CommandContext(ctx, "sudo", "rvn", "pingwait", "client")
+
+	_, err := cmd.Output()
+
+	if ctx.Err() == context.DeadlineExceeded {
+		return errors.New(fmt.Sprintf("Client was not configured before timeout (%s)", timeout))
+	}
+
+	if err != nil {
+		return errors.New(fmt.Sprintf("Non-zero exit code: %s", err))
+	}
+
+	return nil
+
+}
 
 // set iface up - unit testable
 func SetClientIfaceUP(iface string) {

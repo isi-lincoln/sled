@@ -5,6 +5,7 @@ client = {
   initrd: 'initramfs',
   cmdline: 'console=ttyS1',
   defaultnic: 'e1000',
+  memory: { capacity: GB(4) }, // currently necessary
   defaultdisktype: { dev: 'sd', bus: 'sata' }
 }
 

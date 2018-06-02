@@ -11,7 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"testing"
-	//"time"
+	"time"
 )
 
 func setupServer() error {
@@ -107,14 +107,20 @@ func TestRvnBootSimple(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	//time.Sleep(time.Minute * 2)
+	//give server a second or two to start
+	time.Sleep(2 * time.Second)
 
 	log.Infof("Client: Running Sledc")
-	// run sledc on client
-	sledRet := client.RunSledc(shared.ServerIP)
-	log.Infof("%s", sledRet)
+	err = client.RunSledc(shared.ServerIP, shared.ClientIface)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
 
-	//time.Sleep(time.Minute * 2)
+	log.Infof("Waiting for Client to finish Kexec...")
+	err = client.WaitForClient(300)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
 
 	// tear down all the raven configuration
 	err = stopRaven()
