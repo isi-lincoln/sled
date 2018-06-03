@@ -1,8 +1,8 @@
 
 client = {
   name: 'client',
-  kernel: '4.15.11-kernel',
-  initrd: 'initramfs',
+  kernel: '4.14.32-kernel',
+  initrd: '4.14.32-initramfs',
   cmdline: 'console=ttyS1',
   defaultnic: 'e1000',
   memory: { capacity: GB(4) }, // currently necessary

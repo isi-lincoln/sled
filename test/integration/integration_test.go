@@ -109,25 +109,24 @@ func TestRvnBootSimple(t *testing.T) {
 
 	//give server a second or two to start
 	time.Sleep(2 * time.Second)
-	/*
-		log.Infof("Client: Running Sledc")
-		err = client.RunSledc(shared.ServerIP, shared.ClientIface)
-		if err != nil {
-			t.Fatalf("%v", err)
-		}
 
-		log.Infof("Waiting for Client to finish Kexec...")
-		err = client.WaitForClient(300)
-		if err != nil {
-			t.Fatalf("%v", err)
-		}
+	log.Infof("Client: Running Sledc")
+	err = client.RunSledc(shared.ServerIP, shared.ClientIface)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
 
-		// tear down all the raven configuration
-		err = stopRaven()
-		if err != nil {
-			t.Fatalf("Unable to stop Raven: %v", err)
-		}
-	*/
+	log.Infof("Waiting for Client to finish Kexec...")
+	err = client.WaitForClient(300)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	// tear down all the raven configuration
+	err = stopRaven()
+	if err != nil {
+		t.Fatalf("Unable to stop Raven: %v", err)
+	}
 }
 
 // ~~~~~~~~~~~~ HELPER FUNCTIONS ~~~~~~~~~~~~~~

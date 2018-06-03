@@ -1,10 +1,12 @@
 package main
 
 import (
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 )
 
@@ -33,13 +35,20 @@ func main() {
 	}
 	// hardcoded for now, parse unknown json later, or load rvn
 	// client.kernel
-	cKernel := "4.15.11-kernel"
+	cKernel := "4.14.32-kernel"
 	// client.initrd
-	cInitrd := "initramfs"
+	cInitrd := "4.14.32-initramfs"
 	// client --- image ~~ not in model.js
 	cImage := "ubuntu-1604"
+	// now we need the kernel we will load with sledc
+	cNewKernel := "vmlinuz-fedora-test"
+	// now we need the initramfs we will load with sledc
+	cNewInitrd := "initramfs-fedora-test"
 	// server.image
 	sImage := "fedora-27"
+	// custom netboot image (smaller)
+	netboot := "netboot"
+
 	_, err = os.Stat(cKernel)
 	if err != nil {
 		wget(baseURL + cKernel)
@@ -52,9 +61,27 @@ func main() {
 	if err != nil {
 		wget(baseURL + cImage)
 	}
+	_, err = os.Stat(cNewKernel)
+	if err != nil {
+		wget(baseURL + cNewKernel)
+	}
+	_, err = os.Stat(cNewInitrd)
+	if err != nil {
+		wget(baseURL + cNewInitrd)
+	}
+
 	_, err = os.Stat(sImage)
 	if err != nil {
 		wget(baseURL + sImage)
+	}
+	_, err = os.Stat(netboot)
+	if err != nil {
+		cmd := exec.Command("dd", "if=/dev/zero", fmt.Sprintf("of=%s", netboot), "bs=1024", "count=4194304")
+		log.Infof("Creating small netboot image.")
+		err := cmd.Run()
+		if err != nil {
+			log.Warnf("Unable to create small netboot image: %v", err)
+		}
 	}
 	err = os.Chdir(pwd)
 	if err != nil {
