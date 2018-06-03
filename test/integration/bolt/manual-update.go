@@ -34,9 +34,9 @@ func main() {
 		}
 
 		// Test using ubuntu image, with fedora kernel, initramfs
-		imgBytes, err := ioutil.ReadFile("/var/img/ubuntu-1804-nsystemd.img")
-		kerBytes, err := ioutil.ReadFile("/var/img/vmlinuz-fedora-test")
-		initBytes, err := ioutil.ReadFile("/var/img/initramfs-fedora-test")
+		imgName := "ubuntu-1604"
+		kerName := "vmlinuz-fedora-test"
+		initName := "initramfs-fedora-test"
 		// create a bogus wipe sled request
 		// device is the block device name (/sys/block) not (/dev), e.g. sda
 		// unlike the actual requests, the images will not be stored in the bolt db
@@ -44,13 +44,13 @@ func main() {
 		sledCmd := sled.CommandSet{
 			&sled.Wipe{Device: "sda"},
 			&sled.Write{
-				ImageName:  "ubuntu-1804-nsystemd.img",
+				ImageName:  imgName,
 				Device:     "sda",
-				Image:      imgBytes,
-				KernelName: "vmlinuz-fedora-test",
-				Kernel:     kerBytes,
-				InitrdName: "initramfs-fedora-test",
-				Initrd:     initBytes,
+				Image:      []byte(""),
+				KernelName: kerName,
+				Kernel:     []byte(""),
+				InitrdName: initName,
+				Initrd:     []byte(""),
 			},
 			&sled.Kexec{
 				Append: "console=ttyS1 root=/dev/sda1 rootfstype=ext4 rw",

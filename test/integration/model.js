@@ -18,7 +18,7 @@ server = {
     // where code resides
     { source: env.PWD+'/../../', point: '/tmp/code' },
     // where the kernel and initramfs reside
-    { source: env.PWD+'/../travis/sled-test/', point: '/var/img/' },
+    { source: env.PWD+'images/', point: '/var/img/' },
   ]
 }
 
