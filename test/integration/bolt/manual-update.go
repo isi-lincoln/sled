@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/boltdb/bolt"
 	"github.com/ceftb/sled"
-	"io/ioutil"
 	"log"
 )
 

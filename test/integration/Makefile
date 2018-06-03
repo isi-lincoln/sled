@@ -4,10 +4,10 @@ binary:
 	cd bolt/ && go build manual-update.go
 
 images:
-	go run download-images.go
+	go run util/download-images.go
 
 clean:
 	rm -rf ./bolt/manual-update
 
-spotless:
+spotless: clean
 	rm -rf ./images/
