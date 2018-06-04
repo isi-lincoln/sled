@@ -4,6 +4,11 @@ go:
 - master
 jobs:
   include:
+    - stage: integration test sled code
+      before_script:
+        - apt-get install ansible
+        - "./test/travis/install_raven.sh"
+      script: go test -v ./test/integration/integration_test.go
     - stage: unit test sled code
       before_script:
         - go get -u github.com/golang/dep/cmd/dep
