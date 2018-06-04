@@ -1,7 +1,8 @@
-package main
+package bolt
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/boltdb/bolt"
 	"github.com/ceftb/sled"
 	"io/ioutil"
@@ -10,7 +11,7 @@ import (
 
 /*
 * This code is meant to verify the Wipe, Write, and Kexec state machine
-* implemented via grpc calls from sledd to sledc
+* implemented via grpc calls from sledd to sledc.  This code is run on sledd.
  */
 
 func main() {
@@ -32,16 +33,10 @@ func main() {
 			log.Fatal(err)
 		}
 
-		// Test using alpine image, kernel, initramfs
-		//imgBytes, err := ioutil.ReadFile("/var/img/alpine.img")
-		//kerBytes, err := ioutil.ReadFile("/var/img/alpine/hardened/vmlinuz-hardened")
-		//initBytes, err := ioutil.ReadFile("/var/img/alpine/hardened/initramfs-hardened")
-
 		// Test using ubuntu image, with fedora kernel, initramfs
-		imgBytes, err := ioutil.ReadFile("/var/img/mini-ubuntu.img")
-		kerBytes, err := ioutil.ReadFile("/var/img/fedora/vmlinuz-4.15.10-fedora")
-		initBytes, err := ioutil.ReadFile("/var/img/fedora/initramfs-4.15.10-fedora")
-
+		imgBytes, err := ioutil.ReadFile("/var/img/ubuntu-1804-nsystemd.img")
+		kerBytes, err := ioutil.ReadFile("/var/img/vmlinuz-fedora-test")
+		initBytes, err := ioutil.ReadFile("/var/img/initramfs-fedora-test")
 		// create a bogus wipe sled request
 		// device is the block device name (/sys/block) not (/dev), e.g. sda
 		// unlike the actual requests, the images will not be stored in the bolt db
@@ -51,34 +46,34 @@ func main() {
 				Device: "sda",
 			},
 			&sled.Write{
-				//ImageName: "alpine.img",
-				ImageName: "mini-ubuntu.img",
+				ImageName: "ubuntu-1804-nsystemd.img",
 				Device:    "sda",
 				Image:     imgBytes,
-				//KernelName: "alpine/hardened/vmlinuz-hardened",
-				KernelName: "fedora/vmlinuz-4.15.10-fedora",
+				//Image:      []byte("test"),
+				KernelName: "vmlinuz-fedora-test",
 				Kernel:     kerBytes,
-				//InitrdName: "alpine/hardened/initramfs-hardened",
-				InitrdName: "fedora/initramfs-4.15.10-fedora",
+				InitrdName: "initramfs-fedora-test",
 				Initrd:     initBytes,
 			},
 			&sled.Kexec{
-				Append: "console=ttyS1 root=/dev/sda1 rootfstype=ext4",
+				Append: "console=ttyS1 root=/dev/sda1 rootfstype=ext4 rw",
 				Kernel: "/tmp/kernel",
 				Initrd: "/tmp/initrd",
 			},
 		}
 
-		// now we need to marshall it to write out
+		// FIXME: memory issue when encoding, wether json or gob
+		// FIXME: From 1 GB to 3.2GB after sledCmd
+		// FIXME: up to 11GB during the Marshing...
 		jsonWipe, err := json.Marshal(sledCmd)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal("encode error:", err)
 		}
 
 		// put in a key-value for our mac address
-		// this is eth0 mac address, the value needs to be a sled.CommandSet
-		// NOTE: this has to change every time, no way to set mac via ip link in u-root
-		err = bucket.Put([]byte("52:54:00:32:eb:6a"), []byte(jsonWipe))
+		// this is eth1 mac address, the value needs to be a sled.CommandSet
+		clientMAC := "00:00:00:00:00:01"
+		err = bucket.Put([]byte(clientMAC), jsonWipe)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -92,7 +87,7 @@ func main() {
 		b := tx.Bucket([]byte("clients"))
 		c := b.Cursor()
 		for k, _ := c.First(); k != nil; k, _ = c.Next() {
-			log.Printf("key=%s\n", k)
+			fmt.Printf("key=%s\n", k)
 		}
 		return nil
 	})

@@ -1,0 +1,4 @@
+*.img
+.rvn
+images/*
+bolt/manual-update

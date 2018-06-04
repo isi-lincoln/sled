@@ -45,7 +45,9 @@ func main() {
 	}
 
 	if resp.Wipe != nil {
-		sledc.WipeBlock(resp.Wipe.Device)
+		if resp.Wipe.Device != "" {
+			sledc.WipeBlock(resp.Wipe.Device)
+		}
 	}
 	if resp.Write != nil {
 		sledc.Write(resp.Write.Device, resp.Write.Image, resp.Write.Kernel, resp.Write.Initrd)
