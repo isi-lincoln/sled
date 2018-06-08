@@ -186,40 +186,32 @@ func WriteOther(kori []byte, flag string) {
 
 // images consist of the location on client to write them to
 func WriteCommunicator(server string, images []string) error {
-	conn, _ := net.Dial("tcp", *server+":3000")
+	buf := make([]byte, 4096)
 	for _, v := range images {
-    dev, err := os.OpenFile(v, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
-    if err != nil {
-        log.Fatalf("write: error opening device %v", err)
-    }
-    defer dev.Close()
-		conn.Write([]byte(v))
-		buf := make([]byte, 0, 4096) // big buffer
-		for {
-			n, err := conn.Read(4096)
-			if err != nil {
-				if err != io.EOF {
-					log.Errorf("read error: %v", err)
-				}
-				break
-			}
-      
-
-    n, err := dev.Write(image)
-    if err != nil {
-        log.Fatalf("write: error writing image - %v", err)
-    }
-    if n < len(image) {
-        log.Fatalf("write: failed to write full image %d of %d bytes", n, len(image))
-    } else {
-        log.Infof("wrote %d bytes to %s", n, device)
-    }
-    log.Infof("writing image to device %s", device)
-}
-}
-
-
-
+		// create connection
+		conn, _ := net.Dial("tcp", server+":3000")
+		log.Infof("connected to server")
+		dev, err := os.OpenFile(v, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+		if err != nil {
+			log.Fatalf("write: error opening device %v", err)
 		}
+		// send message asking for iamge
+		conn.Write([]byte(v))
+		log.Debugf("wrote %s to server", string(v))
+		for {
+			lenb, err := conn.Read(buf)
+			//log.Debugf("reading: %s", string(buf[:lenb]))
+			if err != nil {
+				if err == io.EOF {
+					break
+				}
+				log.Errorf("Unable to read from server, err: %v", err)
+			}
+			// write image to disk
+			dev.Write(buf[:lenb])
+		}
+		log.Debugf("finished %s", string(v))
+		dev.Close()
+		conn.Close()
 	}
 }
