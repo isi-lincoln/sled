@@ -39,36 +39,67 @@ func main() {
 		log.Fatalf("interface %s not found", *ifx)
 	}
 
+	// the Command function now returns which functions the client should request
 	resp, err := sledd.Command(context.TODO(), &sled.CommandRequest{mac})
 	if err != nil {
 		log.Fatalf("error getting sledd command - %v", err)
 	}
 
 	if resp.Wipe != nil {
-		if resp.Wipe.Device != "" {
-			sledc.WipeBlock(resp.Wipe.Device)
+		wipe, err := sledd.Wipe(context.TODO(), &sled.WipeRequest{mac})
+		if err != nil {
+			log.Fatalf("error getting wipe command - %v", err)
+		}
+		if wipe != nil {
+			sledc.WipeBlock(wipe.Device)
 		}
 	}
+	// write is the message that would hold the fileystem, kernel, initrd
+	// protobuf is not efficient for large file transfers because of serialization
+	// so for write we will use raw sockets to minimize memory footprint
 	if resp.Write != nil {
-		sledc.Write(resp.Write.Device, resp.Write.Image, resp.Write.Kernel, resp.Write.Initrd)
+		write, err := sledd.Write(context.TODO(), &sled.WriteRequest{mac})
+		if err != nil {
+			log.Fatalf("error getting write command - %v", err)
+		}
+		var images []string
+		if write.Image != "" {
+			images.append(write.Image)
+		}
+		if write.Kernel != "" {
+			images.append(write.Kernel)
+		}
+		if write.Initrd != "" {
+			images.append(write.Initrd)
+		}
+		if len(images) > 0 {
+			err = sledc.WriteCommunicator(*server, images)
+			if err != nil {
+				log.Fatalf("error communicating with sledd - %v", err)
+			}
+		} else {
+			log.Infof("Client recieved empty write response - %v", write)
+		}
 	}
 	if resp.Kexec != nil {
-		sledc.Kexec(resp.Kexec.Kernel, resp.Kexec.Append, resp.Kexec.Initrd)
+		kexec, err := sledd.Kexec(context.TODO(), &sled.KexecRequest{mac})
+		if err != nil {
+			log.Fatalf("error getting kexec command - %v", err)
+		}
+		if wipe != nil {
+			sledc.Kexec(kexec.Kernel, kexec.Append, kexec.Initrd)
+		}
 	}
-	if resp.Wipe == nil && resp.Write == nil && resp.Kexec == nil {
+	if resp.Wipe == "" && resp.Write == "" && resp.Kexec == "" {
 		log.Warn("received empty command from server")
 	}
 }
 
-// 8 GB max image size$
-const maxMsgSize = math.MaxUint32
-
+// FIXME: Add certificates for authenticated communitcation client <---> server
 func initClient() (*grpc.ClientConn, sled.SledClient) {
 	conn, err := grpc.Dial(
 		*server+":6000",
-		grpc.WithInsecure(),
-		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMsgSize)),
-		grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(maxMsgSize)))
+		grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("could not connect to sled server - %v", err)
 	}
