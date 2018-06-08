@@ -18,34 +18,30 @@ import (
 
 type Sledd struct{}
 
-func (s *Sledd) Command(
-	ctx context.Context, e *sled.CommandRequest,
-) (*sled.CommandSet, error) {
+func (s *Sledd) Wipe(
+	ctx context.Context, e *sled.WipeRequest,
+) (*sled.Wipe, error) {
 
-	log.Printf("command %#v", e)
+	log.Printf("wipe %#v", e)
+	cs := boltLookup(e.Mac)
+	return cs.Wipe, nil
+}
 
-	cs := &sled.CommandSet{}
-	db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("clients"))
-		if b == nil {
-			return nil
-		}
-		v := b.Get([]byte(e.Mac))
-		if v == nil {
-			return nil
-		} else {
-			err := json.Unmarshal(v, cs)
-			if err != nil {
-				log.Errorf("command: malformed command set @ %s", e.Mac)
-				log.Error(err)
-				return nil
-			}
-			return nil
-		}
-	})
+func (s *Sledd) Kexec(
+	ctx context.Context, e *sled.KexecRequest,
+) (*sled.Kexec, error) {
 
-	// for image, kernel, initramfs, load each of them into memory based
-	// on the path stored in the bolt db
+	log.Printf("kexec %#v", e)
+	cs := boltLookup(e.Mac)
+	return cs.Kexec, nil
+}
+
+func (s *Sledd) Write(
+	ctx context.Context, e *sled.WriteRequest,
+) (*sled.Write, error) {
+
+	log.Printf("kexec %#v", e)
+	cs := boltLookup(e.Mac)
 	if cs.Write != nil {
 		imageName := fmt.Sprintf("/var/img/%s", cs.Write.ImageName)
 		_, err := os.Stat(imageName)
@@ -79,10 +75,45 @@ func (s *Sledd) Command(
 		if err != nil {
 			log.Errorf("command: error reading initramfs %v", err)
 		}
-
 	}
 
+	return cs.Write, nil
+}
+
+func (s *Sledd) Command(
+	ctx context.Context, e *sled.CommandRequest,
+) (*sled.CommandSet, error) {
+	log.Printf("command %#v", e)
+	cs := boltLookup(e.Mac)
+	if cs.Write == nil {
+		cs.Write = ""
+	} else {
+		cs.Write = "1"
+	}
+	if cs.Wipe == nil {
+		cs.Wipe = ""
+	} else {
+		cs.Wipe = "1"
+	}
+	if cs.Kexec == nil {
+		cs.Kexec = ""
+	} else {
+		cs.Kexec = "1"
+	}
+	// for image, kernel, initramfs, load each of them into memory based
+	// on the path stored in the bolt db
+	/*
+
+	 */
+
 	return cs, nil
+
+}
+
+func (s *Sledd) Wwrite(
+	ctx context.Context, e *sled.CommandRequest,
+) (*sled.CommandSet, error) {
+	writeCmd := boltLookup(e.Mac)
 
 }
 
@@ -159,11 +190,8 @@ func csMerge(current, update *sled.CommandSet) *sled.CommandSet {
 
 var db *bolt.DB
 
-// 8 GB max image size
-const maxMsgSize = math.MaxUint32
-
 func main() {
-	fmt.Println("sled-server")
+	fmt.Println("Starting sled-server.")
 
 	// overwrite grpc Msg sizes to allow larger images to be sent
 	grpcServer := grpc.NewServer(
@@ -171,9 +199,14 @@ func main() {
 		grpc.MaxSendMsgSize(maxMsgSize))
 	sled.RegisterSledServer(grpcServer, &Sledd{})
 
-	l, err := net.Listen("tcp", "0.0.0.0:6000")
+	protobufServer, err := net.Listen("tcp", "0.0.0.0:6000")
 	if err != nil {
-		log.Fatalf("failed to listen: %#v", err)
+		log.Fatalf("protobuf failed to listen: %#v", err)
+	}
+
+	writeServer, err := net.Listen("tcp", "0.0.0.0:3000")
+	if err != nil {
+		log.Fatalf("write server failed to listen: %#v", err)
 	}
 
 	db, err = bolt.Open("/var/sled.db", 0600, nil)
@@ -190,6 +223,55 @@ func main() {
 		return nil
 	})
 
+	// spin this off as a goroutine
 	log.Info("Listening on tcp://0.0.0.0:6000")
-	grpcServer.Serve(l)
+	go grpcServer.Serve(protobufServer)
+
+	defer writeServer.Close()
+	log.Info("Listening on tcp://0.0.0.0:3000")
+	for {
+		// Listen for an incoming connection.
+		conn, err := writeServer.Accept()
+		if err != nil {
+			fmt.Println("Error accepting: ", err.Error())
+			os.Exit(1)
+		}
+		// Handle connections in a new goroutine.
+		go sendBytes(conn)
+	}
+
+}
+
+/*             Helper Functions                         */
+
+func sendBytes(conn net.Conn) {
+	buf := make([]byte, 1024)
+	reqLen, err := conn.Read(buf)
+	if err != nil {
+		fmt.Println("Error reading:", err.Error())
+	}
+
+}
+
+func boltLookup(mac string) *sled.CommandSet {
+	cs := &sled.CommandSet{}
+	db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("clients"))
+		if b == nil {
+			return nil
+		}
+		v := b.Get([]byte(mac))
+		if v == nil {
+			return nil
+		} else {
+			err := json.Unmarshal(v, cs)
+			if err != nil {
+				log.Errorf("command: malformed command set @ %s", e.Mac)
+				log.Error(err)
+				return nil
+			}
+			return nil
+		}
+	})
+	return cs
 }
