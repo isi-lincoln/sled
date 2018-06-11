@@ -54,7 +54,7 @@ func main() {
 	// protobuf is not efficient for large file transfers because of serialization
 	// so for write we will use raw sockets to minimize memory footprint
 	if resp.Write != "" {
-		write, err := sled.Write(context.TODO(), &sled.WriteRequest{mac})
+		write, err := sledd.Write(context.TODO(), &sled.WriteRequest{mac})
 		if err != nil {
 			log.Fatalf("error getting write command - %v", err)
 		}
