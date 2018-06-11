@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"math"
+	"io"
 	"net"
 	"os"
+	"strings" // split
 
 	bolt "github.com/coreos/bbolt"
 	log "github.com/sirupsen/logrus"
@@ -18,71 +18,87 @@ import (
 
 type Sledd struct{}
 
-func (s *Sledd) Command(
-	ctx context.Context, e *sled.CommandRequest,
-) (*sled.CommandSet, error) {
+var clientPrefix string = "/var/img"
+var bufferSize int = 4096
 
-	log.Printf("command %#v", e)
+func (s *Sledd) Wipe(
+	ctx context.Context, e *sled.WipeRequest,
+) (*sled.WipeResponse, error) {
 
-	cs := &sled.CommandSet{}
-	db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("clients"))
-		if b == nil {
-			return nil
-		}
-		v := b.Get([]byte(e.Mac))
-		if v == nil {
-			return nil
-		} else {
-			err := json.Unmarshal(v, cs)
-			if err != nil {
-				log.Errorf("command: malformed command set @ %s", e.Mac)
-				log.Error(err)
-				return nil
-			}
-			return nil
-		}
-	})
+	log.Printf("wipe %#v", e)
 
-	// for image, kernel, initramfs, load each of them into memory based
-	// on the path stored in the bolt db
+	var cs *sled.CommandSet
+	var wr *sled.WipeResponse
+	cs = boltLookup(e.Mac)
+	wr.Wipe = cs.Wipe
+	return wr, nil
+}
+
+func (s *Sledd) Kexec(
+	ctx context.Context, e *sled.KexecRequest,
+) (*sled.KexecResponse, error) {
+
+	log.Printf("kexec %#v", e)
+	var cs *sled.CommandSet
+	var kr *sled.KexecResponse
+	cs = boltLookup(e.Mac)
+	kr.Kexec = cs.Kexec
+	return kr, nil
+}
+
+func (s *Sledd) Write(
+	ctx context.Context, e *sled.WriteRequest,
+) (*sled.WriteResponse, error) {
+
+	log.Printf("write %#v", e)
+	var wr *sled.WriteResponse
+	var cs *sled.CommandSet
+	cs = boltLookup(e.Mac)
 	if cs.Write != nil {
-		imageName := fmt.Sprintf("/var/img/%s", cs.Write.ImageName)
+		imageName := fmt.Sprintf("%s/%s", clientPrefix, cs.Write.ImageName)
 		_, err := os.Stat(imageName)
 		if err != nil {
 			log.Errorf("command: non-existant write image %s", cs.Write.ImageName)
-			cs.Write = nil
+			return nil, err
 		}
-		cs.Write.Image, err = ioutil.ReadFile(imageName)
-		if err != nil {
-			log.Errorf("command: error reading image %v", err)
-		}
+		wr.Image = imageName
 
-		kernelName := fmt.Sprintf("/var/img/%s", cs.Write.KernelName)
+		kernelName := fmt.Sprintf("%s/%s", clientPrefix, cs.Write.KernelName)
 		_, err = os.Stat(kernelName)
 		if err != nil {
 			log.Errorf("command: non-existant kernel %s", cs.Write.KernelName)
-			cs.Write = nil
+			return nil, err
 		}
-		cs.Write.Kernel, err = ioutil.ReadFile(kernelName)
-		if err != nil {
-			log.Errorf("command: error reading kernel %v", err)
-		}
+		wr.Kernel = kernelName
 
-		initrdName := fmt.Sprintf("/var/img/%s", cs.Write.InitrdName)
+		initrdName := fmt.Sprintf("%s/%s", clientPrefix, cs.Write.InitrdName)
 		_, err = os.Stat(initrdName)
 		if err != nil {
 			log.Errorf("command: non-existant initramfs %s", cs.Write.InitrdName)
-			cs.Write = nil
+			return nil, err
 		}
-		cs.Write.Initrd, err = ioutil.ReadFile(initrdName)
-		if err != nil {
-			log.Errorf("command: error reading initramfs %v", err)
-		}
-
+		wr.Initrd = initrdName
 	}
 
-	return cs, nil
+	return wr, nil
+}
+
+func (s *Sledd) Command(
+	ctx context.Context, e *sled.CommandRequest,
+) (*sled.PartialCommandSet, error) {
+	log.Printf("command %#v", e)
+	var pr *sled.PartialCommandSet
+	var cs *sled.CommandSet
+	cs = boltLookup(e.Mac)
+	if cs.Write == nil {
+		pr.Write = ""
+	} else {
+		pr.Write = "1"
+	}
+	pr.Kexec = cs.Kexec
+	pr.Wipe = cs.Wipe
+
+	return pr, nil
 
 }
 
@@ -159,22 +175,23 @@ func csMerge(current, update *sled.CommandSet) *sled.CommandSet {
 
 var db *bolt.DB
 
-// 8 GB max image size
-const maxMsgSize = math.MaxUint32
-
 func main() {
-	fmt.Println("sled-server")
+	fmt.Println("Starting sled-server.")
 
 	// overwrite grpc Msg sizes to allow larger images to be sent
-	grpcServer := grpc.NewServer(
-		grpc.MaxRecvMsgSize(maxMsgSize),
-		grpc.MaxSendMsgSize(maxMsgSize))
+	grpcServer := grpc.NewServer()
 	sled.RegisterSledServer(grpcServer, &Sledd{})
 
-	l, err := net.Listen("tcp", "0.0.0.0:6000")
+	protobufServer, err := net.Listen("tcp", "0.0.0.0:6000")
 	if err != nil {
-		log.Fatalf("failed to listen: %#v", err)
+		log.Fatalf("protobuf failed to listen: %#v", err)
 	}
+
+	writeServer, err := net.Listen("tcp", "0.0.0.0:3000")
+	if err != nil {
+		log.Fatalf("write server failed to listen: %#v", err)
+	}
+	defer writeServer.Close()
 
 	db, err = bolt.Open("/var/sled.db", 0600, nil)
 	if err != nil {
@@ -190,6 +207,87 @@ func main() {
 		return nil
 	})
 
+	// spin this off as a goroutine
 	log.Info("Listening on tcp://0.0.0.0:6000")
-	grpcServer.Serve(l)
+	go grpcServer.Serve(protobufServer)
+
+	log.Info("Listening on tcp://0.0.0.0:3000")
+	for {
+		// Listen for an incoming connection.
+		conn, err := writeServer.Accept()
+		if err != nil {
+			fmt.Println("Error accepting: ", err.Error())
+			os.Exit(1)
+		}
+		// Handle connections in a new goroutine.
+		go LowMemWrite(conn)
+	}
+
+}
+
+/*             Helper Functions                         */
+func LowMemWrite(conn net.Conn) error {
+	buf := make([]byte, bufferSize)
+	_, err := conn.Read(buf)
+	if err != nil {
+		log.Errorf("Unable to read from socket err: %v", err)
+		return err
+	}
+	log.Infof("Received: %s", string(buf))
+	msgRec := string(buf)
+	// need to send the first message request the item with the associated mac
+	parsedMsg := strings.Split(msgRec, ",")
+	// just for sanity, remove whitespaces
+	req := strings.TrimSpace(parsedMsg[0])
+	macAddr := strings.TrimSpace(parsedMsg[1])
+	writeCmd := boltLookup(macAddr)
+	// if key in our map, then send the contents
+	if req == writeCmd.Write.ImageName || req == writeCmd.Write.KernelName || req == writeCmd.Write.InitrdName {
+		// open file to read contents from
+		fs, err := os.Open(req)
+		if err != nil {
+			log.Errorf("Unable to open %s, err: %v", req, err)
+			return err
+		}
+		for {
+			// read the file and send out socket while not EOF
+			lenb, err := fs.Read(buf)
+			if err != nil {
+				// when we hit an EOF, break execution
+				if err == io.EOF {
+					conn.Close()
+					break
+				}
+				log.Errorf("Unable to read %s, err: %v", req, err)
+				return err
+			}
+			log.Debugf("writing: %s", string(buf[:lenb]))
+			conn.Write(buf[:lenb])
+		}
+		log.Debugf("Sent file.")
+	}
+	return nil
+}
+
+func boltLookup(mac string) *sled.CommandSet {
+	cs := &sled.CommandSet{}
+	db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("clients"))
+		if b == nil {
+			return nil
+		}
+		v := b.Get([]byte(mac))
+		if v == nil {
+			return nil
+		} else {
+			err := json.Unmarshal(v, cs)
+			if err != nil {
+				log.Errorf("command: malformed command set @ %s", mac)
+				log.Error(err)
+				return nil
+			}
+			return nil
+		}
+	})
+	return cs
 }

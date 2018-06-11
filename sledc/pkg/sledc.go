@@ -3,7 +3,9 @@ package sledc
 import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
+	"io" // read/writing
 	"io/ioutil"
+	"net" // dialing
 	"os"
 	"os/exec"
 	"strconv"
@@ -182,4 +184,39 @@ func WriteOther(kori []byte, flag string) {
 		log.Fatalf("write: failed to write %s %d of %d bytes", flag, n, len(kori))
 	}
 	dev.Close()
+}
+
+// images consist of the location on client to write them to
+func WriteCommunicator(server string, mac string, images []string) error {
+	buf := make([]byte, 4096)
+	for _, v := range images {
+		// create connection
+		conn, _ := net.Dial("tcp", server+":3000")
+		log.Infof("connected to server")
+		dev, err := os.OpenFile(v, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+		if err != nil {
+			log.Fatalf("write: error opening device %v", err)
+		}
+		msg := v + "," + mac
+		// send message asking for image for mac address
+		conn.Write([]byte(msg))
+		log.Debugf("wrote %s to server", string(msg))
+		for {
+			lenb, err := conn.Read(buf)
+			//log.Debugf("reading: %s", string(buf[:lenb]))
+			if err != nil {
+				if err == io.EOF {
+					break
+				}
+				log.Errorf("Unable to read from server, err: %v", err)
+				return err
+			}
+			// write image to disk
+			dev.Write(buf[:lenb])
+		}
+		log.Debugf("finished %s", string(v))
+		dev.Close()
+		conn.Close()
+	}
+	return nil
 }
