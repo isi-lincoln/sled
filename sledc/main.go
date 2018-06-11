@@ -3,13 +3,11 @@ package main
 import (
 	"context"
 	"flag"
-	log "github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
-	"math"
-	"net"
-
 	"github.com/ceftb/sled"
 	sledc "github.com/ceftb/sled/sledc/pkg"
+	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
+	"net"
 )
 
 var server = flag.String("server", "sled", "sled server to connect to")
@@ -46,51 +44,43 @@ func main() {
 	}
 
 	if resp.Wipe != nil {
-		wipe, err := sledd.Wipe(context.TODO(), &sled.WipeRequest{mac})
-		if err != nil {
-			log.Fatalf("error getting wipe command - %v", err)
-		}
-		if wipe != nil {
-			sledc.WipeBlock(wipe.Device)
+		if resp.Wipe.Device != "" {
+			sledc.WipeBlock(resp.Wipe.Device)
+		} else {
+			log.Errorf("Wipe: Empty Device String given.")
 		}
 	}
 	// write is the message that would hold the fileystem, kernel, initrd
 	// protobuf is not efficient for large file transfers because of serialization
 	// so for write we will use raw sockets to minimize memory footprint
-	if resp.Write != nil {
-		write, err := sledd.Write(context.TODO(), &sled.WriteRequest{mac})
+	if resp.Write != "" {
+		write, err := sled.Write(context.TODO(), &sled.WriteRequest{mac})
 		if err != nil {
 			log.Fatalf("error getting write command - %v", err)
 		}
 		var images []string
 		if write.Image != "" {
-			images.append(write.Image)
+			images = append(images, write.Image)
 		}
 		if write.Kernel != "" {
-			images.append(write.Kernel)
+			images = append(images, write.Kernel)
 		}
 		if write.Initrd != "" {
-			images.append(write.Initrd)
+			images = append(images, write.Initrd)
 		}
 		if len(images) > 0 {
-			err = sledc.WriteCommunicator(*server, images)
+			err = sledc.WriteCommunicator(*server, mac, images)
 			if err != nil {
-				log.Fatalf("error communicating with sledd - %v", err)
+				log.Errorf("error communicating with sledd - %v", err)
 			}
 		} else {
 			log.Infof("Client recieved empty write response - %v", write)
 		}
 	}
 	if resp.Kexec != nil {
-		kexec, err := sledd.Kexec(context.TODO(), &sled.KexecRequest{mac})
-		if err != nil {
-			log.Fatalf("error getting kexec command - %v", err)
-		}
-		if wipe != nil {
-			sledc.Kexec(kexec.Kernel, kexec.Append, kexec.Initrd)
-		}
+		sledc.Kexec(resp.Kexec.Kernel, resp.Kexec.Append, resp.Kexec.Initrd)
 	}
-	if resp.Wipe == "" && resp.Write == "" && resp.Kexec == "" {
+	if resp.Wipe == nil && resp.Write == "" && resp.Kexec == nil {
 		log.Warn("received empty command from server")
 	}
 }

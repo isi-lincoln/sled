@@ -8,10 +8,17 @@ It is generated from these files:
 	sled.proto
 
 It has these top-level messages:
+	WipeRequest
+	WipeResponse
+	WriteRequest
+	WriteResponse
+	KexecRequest
+	KexecResponse
 	CommandRequest
 	UpdateResponse
 	UpdateRequest
 	CommandSet
+	PartialCommandSet
 	Wipe
 	Write
 	Kexec
@@ -38,6 +45,118 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
+type WipeRequest struct {
+	Mac string `protobuf:"bytes,1,opt,name=mac" json:"mac,omitempty"`
+}
+
+func (m *WipeRequest) Reset()                    { *m = WipeRequest{} }
+func (m *WipeRequest) String() string            { return proto.CompactTextString(m) }
+func (*WipeRequest) ProtoMessage()               {}
+func (*WipeRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+
+func (m *WipeRequest) GetMac() string {
+	if m != nil {
+		return m.Mac
+	}
+	return ""
+}
+
+type WipeResponse struct {
+	Wipe *Wipe `protobuf:"bytes,1,opt,name=wipe" json:"wipe,omitempty"`
+}
+
+func (m *WipeResponse) Reset()                    { *m = WipeResponse{} }
+func (m *WipeResponse) String() string            { return proto.CompactTextString(m) }
+func (*WipeResponse) ProtoMessage()               {}
+func (*WipeResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+
+func (m *WipeResponse) GetWipe() *Wipe {
+	if m != nil {
+		return m.Wipe
+	}
+	return nil
+}
+
+type WriteRequest struct {
+	Mac string `protobuf:"bytes,1,opt,name=mac" json:"mac,omitempty"`
+}
+
+func (m *WriteRequest) Reset()                    { *m = WriteRequest{} }
+func (m *WriteRequest) String() string            { return proto.CompactTextString(m) }
+func (*WriteRequest) ProtoMessage()               {}
+func (*WriteRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+
+func (m *WriteRequest) GetMac() string {
+	if m != nil {
+		return m.Mac
+	}
+	return ""
+}
+
+type WriteResponse struct {
+	Image  string `protobuf:"bytes,1,opt,name=image" json:"image,omitempty"`
+	Kernel string `protobuf:"bytes,2,opt,name=kernel" json:"kernel,omitempty"`
+	Initrd string `protobuf:"bytes,3,opt,name=initrd" json:"initrd,omitempty"`
+}
+
+func (m *WriteResponse) Reset()                    { *m = WriteResponse{} }
+func (m *WriteResponse) String() string            { return proto.CompactTextString(m) }
+func (*WriteResponse) ProtoMessage()               {}
+func (*WriteResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+
+func (m *WriteResponse) GetImage() string {
+	if m != nil {
+		return m.Image
+	}
+	return ""
+}
+
+func (m *WriteResponse) GetKernel() string {
+	if m != nil {
+		return m.Kernel
+	}
+	return ""
+}
+
+func (m *WriteResponse) GetInitrd() string {
+	if m != nil {
+		return m.Initrd
+	}
+	return ""
+}
+
+type KexecRequest struct {
+	Mac string `protobuf:"bytes,1,opt,name=mac" json:"mac,omitempty"`
+}
+
+func (m *KexecRequest) Reset()                    { *m = KexecRequest{} }
+func (m *KexecRequest) String() string            { return proto.CompactTextString(m) }
+func (*KexecRequest) ProtoMessage()               {}
+func (*KexecRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
+
+func (m *KexecRequest) GetMac() string {
+	if m != nil {
+		return m.Mac
+	}
+	return ""
+}
+
+type KexecResponse struct {
+	Kexec *Kexec `protobuf:"bytes,1,opt,name=kexec" json:"kexec,omitempty"`
+}
+
+func (m *KexecResponse) Reset()                    { *m = KexecResponse{} }
+func (m *KexecResponse) String() string            { return proto.CompactTextString(m) }
+func (*KexecResponse) ProtoMessage()               {}
+func (*KexecResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
+
+func (m *KexecResponse) GetKexec() *Kexec {
+	if m != nil {
+		return m.Kexec
+	}
+	return nil
+}
+
 type CommandRequest struct {
 	Mac string `protobuf:"bytes,1,opt,name=mac" json:"mac,omitempty"`
 }
@@ -45,7 +164,7 @@ type CommandRequest struct {
 func (m *CommandRequest) Reset()                    { *m = CommandRequest{} }
 func (m *CommandRequest) String() string            { return proto.CompactTextString(m) }
 func (*CommandRequest) ProtoMessage()               {}
-func (*CommandRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+func (*CommandRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{6} }
 
 func (m *CommandRequest) GetMac() string {
 	if m != nil {
@@ -62,7 +181,7 @@ type UpdateResponse struct {
 func (m *UpdateResponse) Reset()                    { *m = UpdateResponse{} }
 func (m *UpdateResponse) String() string            { return proto.CompactTextString(m) }
 func (*UpdateResponse) ProtoMessage()               {}
-func (*UpdateResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+func (*UpdateResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{7} }
 
 func (m *UpdateResponse) GetSuccess() bool {
 	if m != nil {
@@ -86,7 +205,7 @@ type UpdateRequest struct {
 func (m *UpdateRequest) Reset()                    { *m = UpdateRequest{} }
 func (m *UpdateRequest) String() string            { return proto.CompactTextString(m) }
 func (*UpdateRequest) ProtoMessage()               {}
-func (*UpdateRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+func (*UpdateRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{8} }
 
 func (m *UpdateRequest) GetMac() string {
 	if m != nil {
@@ -111,7 +230,7 @@ type CommandSet struct {
 func (m *CommandSet) Reset()                    { *m = CommandSet{} }
 func (m *CommandSet) String() string            { return proto.CompactTextString(m) }
 func (*CommandSet) ProtoMessage()               {}
-func (*CommandSet) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+func (*CommandSet) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{9} }
 
 func (m *CommandSet) GetWipe() *Wipe {
 	if m != nil {
@@ -134,6 +253,38 @@ func (m *CommandSet) GetKexec() *Kexec {
 	return nil
 }
 
+type PartialCommandSet struct {
+	Wipe  *Wipe  `protobuf:"bytes,1,opt,name=wipe" json:"wipe,omitempty"`
+	Write string `protobuf:"bytes,2,opt,name=write" json:"write,omitempty"`
+	Kexec *Kexec `protobuf:"bytes,3,opt,name=kexec" json:"kexec,omitempty"`
+}
+
+func (m *PartialCommandSet) Reset()                    { *m = PartialCommandSet{} }
+func (m *PartialCommandSet) String() string            { return proto.CompactTextString(m) }
+func (*PartialCommandSet) ProtoMessage()               {}
+func (*PartialCommandSet) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{10} }
+
+func (m *PartialCommandSet) GetWipe() *Wipe {
+	if m != nil {
+		return m.Wipe
+	}
+	return nil
+}
+
+func (m *PartialCommandSet) GetWrite() string {
+	if m != nil {
+		return m.Write
+	}
+	return ""
+}
+
+func (m *PartialCommandSet) GetKexec() *Kexec {
+	if m != nil {
+		return m.Kexec
+	}
+	return nil
+}
+
 type Wipe struct {
 	Device string `protobuf:"bytes,1,opt,name=device" json:"device,omitempty"`
 }
@@ -141,7 +292,7 @@ type Wipe struct {
 func (m *Wipe) Reset()                    { *m = Wipe{} }
 func (m *Wipe) String() string            { return proto.CompactTextString(m) }
 func (*Wipe) ProtoMessage()               {}
-func (*Wipe) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
+func (*Wipe) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{11} }
 
 func (m *Wipe) GetDevice() string {
 	if m != nil {
@@ -163,7 +314,7 @@ type Write struct {
 func (m *Write) Reset()                    { *m = Write{} }
 func (m *Write) String() string            { return proto.CompactTextString(m) }
 func (*Write) ProtoMessage()               {}
-func (*Write) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
+func (*Write) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{12} }
 
 func (m *Write) GetDevice() string {
 	if m != nil {
@@ -223,7 +374,7 @@ type Kexec struct {
 func (m *Kexec) Reset()                    { *m = Kexec{} }
 func (m *Kexec) String() string            { return proto.CompactTextString(m) }
 func (*Kexec) ProtoMessage()               {}
-func (*Kexec) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{6} }
+func (*Kexec) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{13} }
 
 func (m *Kexec) GetKernel() string {
 	if m != nil {
@@ -247,10 +398,17 @@ func (m *Kexec) GetInitrd() string {
 }
 
 func init() {
+	proto.RegisterType((*WipeRequest)(nil), "WipeRequest")
+	proto.RegisterType((*WipeResponse)(nil), "WipeResponse")
+	proto.RegisterType((*WriteRequest)(nil), "WriteRequest")
+	proto.RegisterType((*WriteResponse)(nil), "WriteResponse")
+	proto.RegisterType((*KexecRequest)(nil), "KexecRequest")
+	proto.RegisterType((*KexecResponse)(nil), "KexecResponse")
 	proto.RegisterType((*CommandRequest)(nil), "CommandRequest")
 	proto.RegisterType((*UpdateResponse)(nil), "UpdateResponse")
 	proto.RegisterType((*UpdateRequest)(nil), "UpdateRequest")
 	proto.RegisterType((*CommandSet)(nil), "CommandSet")
+	proto.RegisterType((*PartialCommandSet)(nil), "PartialCommandSet")
 	proto.RegisterType((*Wipe)(nil), "Wipe")
 	proto.RegisterType((*Write)(nil), "Write")
 	proto.RegisterType((*Kexec)(nil), "Kexec")
@@ -267,7 +425,10 @@ const _ = grpc.SupportPackageIsVersion4
 // Client API for Sled service
 
 type SledClient interface {
-	Command(ctx context.Context, in *CommandRequest, opts ...grpc.CallOption) (*CommandSet, error)
+	Command(ctx context.Context, in *CommandRequest, opts ...grpc.CallOption) (*PartialCommandSet, error)
+	Wipe(ctx context.Context, in *WipeRequest, opts ...grpc.CallOption) (*WipeResponse, error)
+	Write(ctx context.Context, in *WriteRequest, opts ...grpc.CallOption) (*WriteResponse, error)
+	Kexec(ctx context.Context, in *KexecRequest, opts ...grpc.CallOption) (*KexecResponse, error)
 	Update(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*UpdateResponse, error)
 }
 
@@ -279,9 +440,36 @@ func NewSledClient(cc *grpc.ClientConn) SledClient {
 	return &sledClient{cc}
 }
 
-func (c *sledClient) Command(ctx context.Context, in *CommandRequest, opts ...grpc.CallOption) (*CommandSet, error) {
-	out := new(CommandSet)
+func (c *sledClient) Command(ctx context.Context, in *CommandRequest, opts ...grpc.CallOption) (*PartialCommandSet, error) {
+	out := new(PartialCommandSet)
 	err := grpc.Invoke(ctx, "/Sled/Command", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sledClient) Wipe(ctx context.Context, in *WipeRequest, opts ...grpc.CallOption) (*WipeResponse, error) {
+	out := new(WipeResponse)
+	err := grpc.Invoke(ctx, "/Sled/Wipe", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sledClient) Write(ctx context.Context, in *WriteRequest, opts ...grpc.CallOption) (*WriteResponse, error) {
+	out := new(WriteResponse)
+	err := grpc.Invoke(ctx, "/Sled/Write", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sledClient) Kexec(ctx context.Context, in *KexecRequest, opts ...grpc.CallOption) (*KexecResponse, error) {
+	out := new(KexecResponse)
+	err := grpc.Invoke(ctx, "/Sled/Kexec", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -300,7 +488,10 @@ func (c *sledClient) Update(ctx context.Context, in *UpdateRequest, opts ...grpc
 // Server API for Sled service
 
 type SledServer interface {
-	Command(context.Context, *CommandRequest) (*CommandSet, error)
+	Command(context.Context, *CommandRequest) (*PartialCommandSet, error)
+	Wipe(context.Context, *WipeRequest) (*WipeResponse, error)
+	Write(context.Context, *WriteRequest) (*WriteResponse, error)
+	Kexec(context.Context, *KexecRequest) (*KexecResponse, error)
 	Update(context.Context, *UpdateRequest) (*UpdateResponse, error)
 }
 
@@ -322,6 +513,60 @@ func _Sled_Command_Handler(srv interface{}, ctx context.Context, dec func(interf
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SledServer).Command(ctx, req.(*CommandRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Sled_Wipe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(WipeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SledServer).Wipe(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Sled/Wipe",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SledServer).Wipe(ctx, req.(*WipeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Sled_Write_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(WriteRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SledServer).Write(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Sled/Write",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SledServer).Write(ctx, req.(*WriteRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Sled_Kexec_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(KexecRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SledServer).Kexec(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Sled/Kexec",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SledServer).Kexec(ctx, req.(*KexecRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -353,6 +598,18 @@ var _Sled_serviceDesc = grpc.ServiceDesc{
 			Handler:    _Sled_Command_Handler,
 		},
 		{
+			MethodName: "Wipe",
+			Handler:    _Sled_Wipe_Handler,
+		},
+		{
+			MethodName: "Write",
+			Handler:    _Sled_Write_Handler,
+		},
+		{
+			MethodName: "Kexec",
+			Handler:    _Sled_Kexec_Handler,
+		},
+		{
 			MethodName: "Update",
 			Handler:    _Sled_Update_Handler,
 		},
@@ -364,28 +621,35 @@ var _Sled_serviceDesc = grpc.ServiceDesc{
 func init() { proto.RegisterFile("sled.proto", fileDescriptor0) }
 
 var fileDescriptor0 = []byte{
-	// 363 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x92, 0xd1, 0x6a, 0xfa, 0x30,
-	0x14, 0xc6, 0xf1, 0x6f, 0x5b, 0xff, 0x1e, 0x37, 0x1d, 0x61, 0x48, 0x27, 0x22, 0x23, 0x37, 0xdb,
-	0x18, 0xf4, 0xc2, 0x3d, 0x82, 0xbb, 0x1b, 0x38, 0x88, 0x0c, 0x61, 0x77, 0x5d, 0x73, 0x90, 0xa0,
-	0x6d, 0xb3, 0xa6, 0xce, 0xbd, 0xdf, 0x5e, 0x6c, 0xe4, 0x24, 0x9d, 0xf5, 0xc2, 0xbb, 0xfe, 0xbe,
-	0x93, 0xef, 0x3b, 0x39, 0xcd, 0x01, 0x30, 0x3b, 0x94, 0x89, 0xae, 0xca, 0xba, 0xe4, 0x1c, 0x86,
-	0x8b, 0x32, 0xcf, 0xd3, 0x42, 0x0a, 0xfc, 0xdc, 0xa3, 0xa9, 0xd9, 0x15, 0x74, 0xf3, 0x34, 0x8b,
-	0x3b, 0xb7, 0x9d, 0xfb, 0xbe, 0xb0, 0x9f, 0xfc, 0x19, 0x86, 0x6f, 0x5a, 0xa6, 0x35, 0x0a, 0x34,
-	0xba, 0x2c, 0x0c, 0xb2, 0x18, 0x7a, 0x66, 0x9f, 0x65, 0x68, 0x0c, 0x9d, 0xfb, 0x2f, 0x1a, 0xb4,
-	0x95, 0x1c, 0x8d, 0x49, 0x37, 0x18, 0xff, 0xa3, 0x84, 0x06, 0xf9, 0x12, 0x2e, 0x9b, 0x94, 0x33,
-	0x8d, 0xd8, 0x23, 0x40, 0xe6, 0x2e, 0xb3, 0xc2, 0x9a, 0xfc, 0x83, 0xf9, 0x20, 0x59, 0xfc, 0x49,
-	0xa2, 0x55, 0xe6, 0x19, 0xc0, 0xb1, 0xc2, 0x6e, 0x20, 0x38, 0x28, 0x8d, 0x94, 0x36, 0x98, 0x87,
-	0xc9, 0x5a, 0x69, 0x14, 0x24, 0xb1, 0x29, 0x84, 0x87, 0x4a, 0xd5, 0xe8, 0x03, 0xa3, 0x64, 0x6d,
-	0x49, 0x38, 0xd1, 0x56, 0xb7, 0xf8, 0x8d, 0x59, 0xdc, 0xf5, 0xd5, 0x17, 0x4b, 0xc2, 0x89, 0x7c,
-	0x06, 0x81, 0x4d, 0x62, 0x63, 0x88, 0x24, 0x7e, 0xa9, 0x0c, 0xfd, 0x75, 0x3d, 0xf1, 0x9f, 0x0e,
-	0x84, 0x14, 0x77, 0xee, 0x04, 0x9b, 0x42, 0x5f, 0xe5, 0xe9, 0x06, 0x97, 0x69, 0xde, 0xfc, 0x92,
-	0xa3, 0xc0, 0xae, 0x21, 0x24, 0xa0, 0xee, 0x17, 0xc2, 0x01, 0x9b, 0x01, 0x6c, 0xb1, 0x2a, 0x70,
-	0x47, 0xa6, 0x80, 0x4c, 0x2d, 0xc5, 0xf6, 0x72, 0x14, 0x87, 0x64, 0xf3, 0x64, 0x7d, 0xaa, 0x50,
-	0x75, 0x25, 0xc9, 0x17, 0x39, 0xdf, 0x51, 0xb1, 0x3e, 0x47, 0x71, 0xcf, 0xf9, 0x1c, 0xf1, 0x57,
-	0x08, 0x69, 0xea, 0x56, 0xb0, 0x1f, 0xc2, 0x07, 0x8f, 0x21, 0x4a, 0xb5, 0xc6, 0x42, 0xfa, 0x09,
-	0x3c, 0xb5, 0x02, 0xbb, 0x4e, 0x77, 0x34, 0x7f, 0x87, 0x60, 0xb5, 0x43, 0xc9, 0xee, 0xa0, 0xe7,
-	0xdf, 0x88, 0x8d, 0x92, 0xd3, 0x3d, 0x9b, 0xb4, 0x1f, 0x96, 0x3d, 0x40, 0xe4, 0x96, 0x83, 0x0d,
-	0x93, 0x93, 0x2d, 0x99, 0x8c, 0x92, 0xd3, 0xdd, 0xfb, 0x88, 0x68, 0x71, 0x9f, 0x7e, 0x03, 0x00,
-	0x00, 0xff, 0xff, 0x36, 0x77, 0x35, 0x6c, 0xc6, 0x02, 0x00, 0x00,
+	// 475 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x54, 0xdb, 0x6e, 0xd3, 0x40,
+	0x10, 0x95, 0x49, 0xec, 0x90, 0x93, 0xd8, 0x85, 0x55, 0x85, 0x82, 0x55, 0x85, 0xca, 0x48, 0x15,
+	0x15, 0x62, 0x1f, 0xc2, 0x27, 0x94, 0x37, 0xa4, 0x82, 0x52, 0x55, 0x7d, 0x76, 0xed, 0x11, 0x5a,
+	0x35, 0x76, 0x8c, 0xd7, 0xa5, 0xfc, 0x1f, 0xff, 0xc0, 0xf7, 0xa0, 0xbd, 0xe1, 0x35, 0xd4, 0x55,
+	0xde, 0x3c, 0x67, 0x6e, 0x9e, 0x99, 0x73, 0x16, 0x90, 0x3b, 0x2a, 0x79, 0xd3, 0xee, 0xbb, 0x7d,
+	0xf6, 0x06, 0x8b, 0x1b, 0xd1, 0xd0, 0x96, 0xbe, 0xdf, 0x93, 0xec, 0xd8, 0x0b, 0x4c, 0xaa, 0xbc,
+	0x58, 0x05, 0xa7, 0xc1, 0xbb, 0xf9, 0x56, 0x7d, 0x66, 0xe7, 0x58, 0x9a, 0x00, 0xd9, 0xec, 0x6b,
+	0x49, 0xec, 0x35, 0xa6, 0x0f, 0xa2, 0x21, 0x1d, 0xb2, 0xd8, 0x84, 0x5c, 0x3b, 0x35, 0x94, 0x9d,
+	0x62, 0x79, 0xd3, 0x8a, 0xee, 0x89, 0x62, 0xd7, 0x88, 0x6d, 0x84, 0xad, 0x76, 0x8c, 0x50, 0x54,
+	0xf9, 0x37, 0xb2, 0x41, 0xc6, 0x60, 0xaf, 0x10, 0xdd, 0x51, 0x5b, 0xd3, 0x6e, 0xf5, 0x4c, 0xc3,
+	0xd6, 0x52, 0xb8, 0xa8, 0x45, 0xd7, 0x96, 0xab, 0x89, 0xc1, 0x8d, 0xa5, 0x1a, 0x7f, 0xa6, 0x9f,
+	0x54, 0x8c, 0x37, 0xfe, 0x80, 0xd8, 0x46, 0xd8, 0xc6, 0x27, 0x08, 0xef, 0x14, 0x60, 0xe7, 0x88,
+	0xb8, 0x71, 0x1b, 0x30, 0xcb, 0x90, 0x5c, 0xec, 0xab, 0x2a, 0xaf, 0xcb, 0xf1, 0x92, 0x9f, 0x90,
+	0x5c, 0x37, 0x65, 0xee, 0x0d, 0xb3, 0xc2, 0x4c, 0xde, 0x17, 0x05, 0x49, 0xa9, 0xe3, 0x9e, 0x6f,
+	0x9d, 0xa9, 0x3c, 0x15, 0x49, 0xa9, 0x06, 0x35, 0x13, 0x39, 0x33, 0xbb, 0x44, 0xec, 0xaa, 0x8c,
+	0x34, 0x62, 0xef, 0x81, 0xc2, 0xfc, 0xcc, 0x15, 0x75, 0x3a, 0x7f, 0xb1, 0x59, 0xf0, 0x8b, 0xbf,
+	0xd0, 0xd6, 0x73, 0x67, 0x05, 0xd0, 0x7b, 0x9e, 0x38, 0x96, 0x5a, 0xc0, 0x83, 0x3a, 0x85, 0x2d,
+	0x18, 0x71, 0x73, 0x18, 0x03, 0xf6, 0xeb, 0x99, 0x3c, 0xb6, 0x9e, 0x5b, 0xbc, 0xfc, 0x9a, 0xb7,
+	0x9d, 0xc8, 0x77, 0x87, 0xf5, 0x3a, 0xf6, 0x7b, 0xcd, 0x0f, 0xeb, 0xb1, 0xc6, 0x54, 0x55, 0x50,
+	0x37, 0x2f, 0xe9, 0x87, 0x28, 0x1c, 0x45, 0xac, 0x95, 0xfd, 0x0a, 0x10, 0xea, 0x5f, 0x1e, 0x8b,
+	0x60, 0x27, 0x98, 0x6b, 0x3a, 0x5d, 0xe6, 0x95, 0xeb, 0xdc, 0x03, 0x3d, 0xf3, 0x54, 0xf7, 0xa5,
+	0x63, 0xde, 0x1a, 0x30, 0x5c, 0xd3, 0x49, 0x53, 0x9d, 0xe4, 0x21, 0x1e, 0x33, 0x43, 0x9d, 0xe6,
+	0x98, 0xb9, 0x06, 0x0c, 0x17, 0x75, 0x5e, 0x64, 0xf2, 0x7a, 0xc4, 0x63, 0xee, 0xcc, 0xe4, 0x59,
+	0xe6, 0x7e, 0x41, 0xa8, 0xa7, 0xf6, 0x0a, 0x07, 0xff, 0x52, 0x3e, 0x6f, 0x1a, 0xaa, 0x4b, 0x27,
+	0x05, 0x63, 0x8d, 0x49, 0x61, 0xf3, 0x3b, 0xc0, 0xf4, 0x6a, 0x47, 0x25, 0xe3, 0x98, 0xd9, 0xe3,
+	0xb0, 0x23, 0x3e, 0x24, 0x73, 0xca, 0xf8, 0xff, 0xe7, 0x7b, 0x6b, 0xf7, 0xbd, 0xe4, 0xde, 0x7b,
+	0x90, 0xc6, 0x7c, 0x20, 0xfe, 0x33, 0xb7, 0xf3, 0x98, 0xfb, 0x4a, 0x4f, 0x13, 0x3e, 0x94, 0xf5,
+	0x99, 0x1b, 0x2b, 0xe6, 0xbe, 0x30, 0xd3, 0x84, 0x0f, 0x55, 0x78, 0x8e, 0xc8, 0xb0, 0x9f, 0x25,
+	0x7c, 0x20, 0x83, 0xf4, 0x88, 0x0f, 0xc5, 0x75, 0x1b, 0xe9, 0xf7, 0xea, 0xe3, 0x9f, 0x00, 0x00,
+	0x00, 0xff, 0xff, 0x4d, 0x59, 0x88, 0x77, 0xbd, 0x04, 0x00, 0x00,
 }
