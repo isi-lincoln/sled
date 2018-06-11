@@ -1,10 +1,10 @@
 syntax = "proto3";
 
 service Sled {
-  rpc Command(CommandRequest) returns (CommandSet);
-  rpc Wipe(WipeRequest) returns (WipeSet);
-  rpc Write(WriteRequest) returns (WriteSet);
-  rpc Kexec(KexecRequest) returns (KexecSet);
+  rpc Command(CommandRequest) returns (PartialCommandSet);
+  rpc Wipe(WipeRequest) returns (WipeResponse);
+  rpc Write(WriteRequest) returns (WriteResponse);
+  rpc Kexec(KexecRequest) returns (KexecResponse);
   rpc Update(UpdateRequest) returns (UpdateResponse);
 }
 
@@ -45,9 +45,15 @@ message UpdateRequest {
 }
 
 message CommandSet {
-  string wipe = 1;
+  Wipe wipe = 1;
+  Write write = 2;
+  Kexec kexec = 3;
+}
+
+message PartialCommandSet {
+  Wipe wipe = 1;
   string write = 2;
-  string kexec = 3;
+  Kexec kexec = 3;
 }
 
 message Wipe {
