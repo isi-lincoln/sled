@@ -1,9 +1,17 @@
-sudo: true
+sudo: required
+dist: trusty
 language: go
 go:
 - master
 jobs:
   include:
+    - stage: integration test sled code
+      before_script:
+        - sudo apt-get install ansible
+        - sudo "./test/travis/install_raven.sh"
+        - go get -u github.com/golang/dep/cmd/dep
+        - dep ensure
+      script: sudo -E $(which go) test -v ./test/integration/integration_test.go
     - stage: unit test sled code
       before_script:
         - go get -u github.com/golang/dep/cmd/dep
