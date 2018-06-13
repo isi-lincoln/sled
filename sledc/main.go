@@ -58,15 +58,17 @@ func main() {
 		if err != nil {
 			log.Fatalf("error getting write command - %v", err)
 		}
-		var images []string
+		log.Infof("Images returned by server: %v", write)
+		var images map[string]string
 		if write.Image != "" {
-			images = append(images, write.Image)
+			images["image"] = write.Image
+			images["device"] = write.Device
 		}
 		if write.Kernel != "" {
-			images = append(images, write.Kernel)
+			images["kernel"] = write.Kernel
 		}
 		if write.Initrd != "" {
-			images = append(images, write.Initrd)
+			images["initrd"] = write.Initrd
 		}
 		if len(images) > 0 {
 			err = sledc.WriteCommunicator(*server, mac, images)

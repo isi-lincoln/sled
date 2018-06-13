@@ -8,6 +8,7 @@ import (
 	"net" // dialing
 	"os"
 	"os/exec"
+	"path/filepath" // split path for filename
 	"strconv"
 	"strings" // remove newline from file
 )
@@ -35,7 +36,7 @@ func Wipe(device string, size int64) {
 		os.O_CREATE|os.O_WRONLY|os.O_TRUNC,
 		0666)
 	if err != nil {
-		log.Fatalf("write: error opening device %v", err)
+		log.Fatalf("wipe: error opening device %v", err)
 	}
 
 	// explicitly set N to 0
@@ -187,15 +188,29 @@ func WriteOther(kori []byte, flag string) {
 }
 
 // images consist of the location on client to write them to
-func WriteCommunicator(server string, mac string, images []string) error {
+func WriteCommunicator(server string, mac string, images map[string]string) error {
 	buf := make([]byte, 4096)
-	for _, v := range images {
+	for k, v := range images {
 		// create connection
 		conn, _ := net.Dial("tcp", server+":3000")
+		var devFi *os.File
 		log.Infof("connected to server")
-		dev, err := os.OpenFile(v, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
-		if err != nil {
-			log.Fatalf("write: error opening device %v", err)
+		if k == "image" {
+			log.Infof("writing %s to %s", k, images["device"])
+			dev, err := os.OpenFile(images["device"], os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+			devFi = dev
+			if err != nil {
+				log.Fatalf("write: error opening device %v", err)
+			}
+		} else {
+			baseName := filepath.Base(v)
+			imagePath := fmt.Sprintf("/tmp/%s", baseName)
+			log.Infof("writing %s to %s", k, imagePath)
+			dev, err := os.OpenFile(imagePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+			devFi = dev
+			if err != nil {
+				log.Fatalf("write: error opening device %v", err)
+			}
 		}
 		msg := v + "," + mac
 		// send message asking for image for mac address
@@ -212,10 +227,10 @@ func WriteCommunicator(server string, mac string, images []string) error {
 				return err
 			}
 			// write image to disk
-			dev.Write(buf[:lenb])
+			devFi.Write(buf[:lenb])
 		}
 		log.Debugf("finished %s", string(v))
-		dev.Close()
+		devFi.Close()
 		conn.Close()
 	}
 	return nil

@@ -19,9 +19,10 @@ message WriteRequest {
   string mac = 1;
 }
 message WriteResponse {
-  string image = 1;
-  string kernel = 2;
-  string initrd = 3;
+  string device = 1;
+  string image = 2;
+  string kernel = 3;
+  string initrd = 4;
 }
 
 message KexecRequest {

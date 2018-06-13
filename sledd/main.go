@@ -20,12 +20,13 @@ type Sledd struct{}
 
 var clientPrefix string = "/var/img"
 var bufferSize int = 4096
+var sledBoltDB string = "/var/sled.db"
 
 func (s *Sledd) Wipe(
 	ctx context.Context, e *sled.WipeRequest,
 ) (*sled.WipeResponse, error) {
 
-	log.Printf("wipe %#v", e)
+	log.Infof("wipe %#v", e)
 
 	var cs *sled.CommandSet
 	cs = boltLookup(e.Mac)
@@ -38,7 +39,7 @@ func (s *Sledd) Kexec(
 	ctx context.Context, e *sled.KexecRequest,
 ) (*sled.KexecResponse, error) {
 
-	log.Printf("kexec %#v", e)
+	log.Infof("kexec %#v", e)
 	var cs *sled.CommandSet
 	cs = boltLookup(e.Mac)
 	kr := &sled.KexecResponse{}
@@ -50,11 +51,14 @@ func (s *Sledd) Write(
 	ctx context.Context, e *sled.WriteRequest,
 ) (*sled.WriteResponse, error) {
 
-	log.Printf("write %#v", e)
+	log.Infof("write %#v", e)
 	var cs *sled.CommandSet
 	cs = boltLookup(e.Mac)
 	wr := &sled.WriteResponse{}
+
 	if cs.Write != nil {
+		wr.Device = cs.Write.Device
+
 		imageName := fmt.Sprintf("%s/%s", clientPrefix, cs.Write.ImageName)
 		_, err := os.Stat(imageName)
 		if err != nil {
@@ -86,10 +90,10 @@ func (s *Sledd) Write(
 func (s *Sledd) Command(
 	ctx context.Context, e *sled.CommandRequest,
 ) (*sled.PartialCommandSet, error) {
-	log.Printf("command %#v", e)
-	var pr *sled.PartialCommandSet
+	log.Infof("command %#v", e)
 	var cs *sled.CommandSet
 	cs = boltLookup(e.Mac)
+	pr := &sled.PartialCommandSet{}
 	if cs.Write == nil {
 		pr.Write = ""
 	} else {
@@ -106,9 +110,9 @@ func (s *Sledd) Update(
 	ctx context.Context, e *sled.UpdateRequest,
 ) (*sled.UpdateResponse, error) {
 
-	log.Printf("update %#v", e)
+	log.Infof("update %#v", e)
 	var db *bolt.DB
-	db, err := bolt.Open("/var/sled.db", 0600, nil)
+	db, err := bolt.Open(sledBoltDB, 0600, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -124,7 +128,8 @@ func (s *Sledd) Update(
 		if v != nil {
 			err := json.Unmarshal(v, current)
 			if err != nil {
-				return fmt.Errorf("command: malformed command set @ %s", e.Mac)
+				log.Error("command: malformed command set @ %s", e.Mac)
+				return err
 			}
 		}
 		// merge the update into the current command set
@@ -132,18 +137,20 @@ func (s *Sledd) Update(
 		// psersist the update
 		js, err := json.Marshal(updated)
 		if err != nil {
-			return fmt.Errorf("update: failed to serialize command set %v", err)
+			log.Error("update: failed to serialize command set %v", err)
+			return err
 		}
 		err = b.Put([]byte(e.Mac), js)
 		if err != nil {
-			return fmt.Errorf("update: failed to put command set %v", err)
+			log.Error("update: failed to put command set %v", err)
+			return err
 		}
 		return nil
 	})
 	db.Close()
 
 	if err != nil {
-		log.Printf("update: failed - %v", err)
+		log.Infof("update: failed - %v", err)
 	}
 
 	return &sled.UpdateResponse{
@@ -174,7 +181,7 @@ func csMerge(current, update *sled.CommandSet) *sled.CommandSet {
 }
 
 func main() {
-	fmt.Println("Starting sled-server.")
+	log.Infof("Starting sled-server.")
 
 	// overwrite grpc Msg sizes to allow larger images to be sent
 	grpcServer := grpc.NewServer()
@@ -191,14 +198,15 @@ func main() {
 	}
 	defer writeServer.Close()
 
-	db, err := bolt.Open("/var/sled.db", 0600, nil)
+	db, err := bolt.Open(sledBoltDB, 0600, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 	db.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists([]byte("clients"))
 		if err != nil {
-			return fmt.Errorf("create bucket: %s", err)
+			log.Errorf("create bucket: %s", err)
+			return err
 		}
 		return nil
 	})
@@ -213,7 +221,7 @@ func main() {
 		// Listen for an incoming connection.
 		conn, err := writeServer.Accept()
 		if err != nil {
-			fmt.Println("Error accepting: ", err.Error())
+			log.Println("Error accepting: ", err.Error())
 			os.Exit(1)
 		}
 		// Handle connections in a new goroutine.
@@ -269,7 +277,7 @@ func LowMemWrite(conn net.Conn) error {
 func boltLookup(mac string) *sled.CommandSet {
 	cs := &sled.CommandSet{}
 	var db *bolt.DB
-	db, err := bolt.Open("/var/sled.db", 0600, nil)
+	db, err := bolt.Open(sledBoltDB, 0600, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
