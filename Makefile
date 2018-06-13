@@ -15,10 +15,10 @@ sled.pb.go: sled.proto
 	protoc -I . ./sled.proto --go_out=plugins=grpc:.
 
 build/initramfs.cpio: $(GOPATH)/bin/u-root | build
-	go get -u github.com/elves/elvish
+	go get -u github.com/u-root/elvish
 	u-root -format=cpio -build=bb -o $@ \
 		github.com/u-root/u-root/cmds/{ps,ls,ip,io,dhclient,wget,tcz,cat,pwd,builtin,boot,dd,dmesg,ed,find,grep,kexec,kill,modprobe,lsmod,mount,mv,ping,umount,uname,vboot,which,shutdown,cp,mkdir,rm,init,rush} \
-		github.com/elves/elvish \
+		github.com/u-root/elvish \
 		github.com/isi-lincoln/sled/sledc
 	./update-cpio.sh
 
