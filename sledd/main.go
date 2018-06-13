@@ -13,7 +13,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 
-	"github.com/ceftb/sled"
+	"github.com/isi-lincoln/sled"
 )
 
 type Sledd struct{}
@@ -28,8 +28,8 @@ func (s *Sledd) Wipe(
 	log.Printf("wipe %#v", e)
 
 	var cs *sled.CommandSet
-	var wr *sled.WipeResponse
 	cs = boltLookup(e.Mac)
+	wr := &sled.WipeResponse{}
 	wr.Wipe = cs.Wipe
 	return wr, nil
 }
@@ -40,8 +40,8 @@ func (s *Sledd) Kexec(
 
 	log.Printf("kexec %#v", e)
 	var cs *sled.CommandSet
-	var kr *sled.KexecResponse
 	cs = boltLookup(e.Mac)
+	kr := &sled.KexecResponse{}
 	kr.Kexec = cs.Kexec
 	return kr, nil
 }
@@ -51,9 +51,9 @@ func (s *Sledd) Write(
 ) (*sled.WriteResponse, error) {
 
 	log.Printf("write %#v", e)
-	var wr *sled.WriteResponse
 	var cs *sled.CommandSet
 	cs = boltLookup(e.Mac)
+	wr := &sled.WriteResponse{}
 	if cs.Write != nil {
 		imageName := fmt.Sprintf("%s/%s", clientPrefix, cs.Write.ImageName)
 		_, err := os.Stat(imageName)
@@ -107,15 +107,17 @@ func (s *Sledd) Update(
 ) (*sled.UpdateResponse, error) {
 
 	log.Printf("update %#v", e)
-
-	err := db.Update(func(tx *bolt.Tx) error {
-
+	var db *bolt.DB
+	db, err := bolt.Open("/var/sled.db", 0600, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = db.Update(func(tx *bolt.Tx) error {
 		// grab a reference to the clients bucket
 		b := tx.Bucket([]byte("clients"))
 		if b == nil {
 			return fmt.Errorf("update: no client bucket")
 		}
-
 		// get the current value associated with the specified mac
 		var current *sled.CommandSet
 		v := b.Get([]byte(e.Mac))
@@ -125,10 +127,8 @@ func (s *Sledd) Update(
 				return fmt.Errorf("command: malformed command set @ %s", e.Mac)
 			}
 		}
-
 		// merge the update into the current command set
 		updated := csMerge(current, e.CommandSet)
-
 		// psersist the update
 		js, err := json.Marshal(updated)
 		if err != nil {
@@ -138,9 +138,9 @@ func (s *Sledd) Update(
 		if err != nil {
 			return fmt.Errorf("update: failed to put command set %v", err)
 		}
-
 		return nil
 	})
+	db.Close()
 
 	if err != nil {
 		log.Printf("update: failed - %v", err)
@@ -173,8 +173,6 @@ func csMerge(current, update *sled.CommandSet) *sled.CommandSet {
 	return result
 }
 
-var db *bolt.DB
-
 func main() {
 	fmt.Println("Starting sled-server.")
 
@@ -193,12 +191,10 @@ func main() {
 	}
 	defer writeServer.Close()
 
-	db, err = bolt.Open("/var/sled.db", 0600, nil)
+	db, err := bolt.Open("/var/sled.db", 0600, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
-
 	db.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists([]byte("clients"))
 		if err != nil {
@@ -206,6 +202,7 @@ func main() {
 		}
 		return nil
 	})
+	db.Close()
 
 	// spin this off as a goroutine
 	log.Info("Listening on tcp://0.0.0.0:6000")
@@ -271,7 +268,12 @@ func LowMemWrite(conn net.Conn) error {
 
 func boltLookup(mac string) *sled.CommandSet {
 	cs := &sled.CommandSet{}
-	db.View(func(tx *bolt.Tx) error {
+	var db *bolt.DB
+	db, err := bolt.Open("/var/sled.db", 0600, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("clients"))
 		if b == nil {
 			return nil
@@ -289,5 +291,9 @@ func boltLookup(mac string) *sled.CommandSet {
 			return nil
 		}
 	})
+	if err != nil {
+		log.Errorf("boltDBLookup: %v", err)
+	}
+	db.Close()
 	return cs
 }

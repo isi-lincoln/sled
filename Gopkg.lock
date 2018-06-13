@@ -9,6 +9,18 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/ceftb/sled"
+  packages = [
+    ".",
+    "sledc/pkg",
+    "test/integration/client",
+    "test/integration/server",
+    "test/integration/shared"
+  ]
+  revision = "78e3951ee325f76ebea3b45ee51912aa6e8637bf"
+
+[[projects]]
+  branch = "master"
   name = "github.com/ceftb/xir"
   packages = ["lang/go"]
   revision = "22201a817ffe7e4366aca24e75bd9d45901b39d1"
@@ -24,6 +36,12 @@
   packages = ["."]
   revision = "507f6050b8568533fb3f5504de8e5205fa62a114"
   version = "v1.6.0"
+
+[[projects]]
+  name = "github.com/fsnotify/fsnotify"
+  packages = ["."]
+  revision = "c2828203cd70a50dcccfb2761f8b1f8ceef9a8e9"
+  version = "v1.4.7"
 
 [[projects]]
   name = "github.com/go-redis/redis"
@@ -53,6 +71,23 @@
   version = "v1.0.0"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/hcl"
+  packages = [
+    ".",
+    "hcl/ast",
+    "hcl/parser",
+    "hcl/printer",
+    "hcl/scanner",
+    "hcl/strconv",
+    "hcl/token",
+    "json/parser",
+    "json/scanner",
+    "json/token"
+  ]
+  revision = "ef8a98b0bbce4a65b5aa4c368430a80ddc533168"
+
+[[projects]]
   name = "github.com/inconshreveable/mousetrap"
   packages = ["."]
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
@@ -71,6 +106,12 @@
   version = "v4.1.0"
 
 [[projects]]
+  name = "github.com/magiconair/properties"
+  packages = ["."]
+  revision = "c2353362d570a7bfa228149c62842019201cfb71"
+  version = "v1.8.0"
+
+[[projects]]
   name = "github.com/mattn/go-colorable"
   packages = ["."]
   revision = "167de6bfdfba052fa6b2d3664c8f5272e23c9072"
@@ -83,28 +124,22 @@
   version = "v0.0.3"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/mitchellh/mapstructure"
+  packages = ["."]
+  revision = "bb74f1db0675b241733089d5a1faa5dd8b0ef57b"
+
+[[projects]]
+  name = "github.com/pelletier/go-toml"
+  packages = ["."]
+  revision = "c01d1270ff3e442a8a57cddc1c92dc1138598194"
+  version = "v1.2.0"
+
+[[projects]]
   name = "github.com/rcgoodfellow/raven"
   packages = ["rvn"]
   revision = "0c072dd0304f6a613346b692cdb092645ce03ad9"
   version = "v0.2"
-
-[[projects]]
-  name = "github.com/rcgoodfellow/walrustf"
-  packages = ["go"]
-  revision = "700ff93349cb142a95385f426c43ed70533e0261"
-  version = "v0.1"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/reiver/go-oi"
-  packages = ["."]
-  revision = "431c83978379297f04f85f6eb94f129f25ab741d"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/reiver/go-telnet"
-  packages = ["."]
-  revision = "6b696f32801a8f8dd07947f1e1fdb1a7dc4766ff"
 
 [[projects]]
   name = "github.com/satori/go.uuid"
@@ -119,10 +154,19 @@
   version = "v1.0.4"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/sparrc/go-ping"
+  name = "github.com/spf13/afero"
+  packages = [
+    ".",
+    "mem"
+  ]
+  revision = "787d034dfe70e44075ccc060d346146ef53270ad"
+  version = "v1.1.1"
+
+[[projects]]
+  name = "github.com/spf13/cast"
   packages = ["."]
-  revision = "416e72114cd1edce2f287648f935a60dfe6cf40e"
+  revision = "8965335b8c7107321228e3e3702cab9832751bac"
+  version = "v1.2.0"
 
 [[projects]]
   name = "github.com/spf13/cobra"
@@ -131,10 +175,22 @@
   version = "v0.0.1"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/spf13/jwalterweatherman"
+  packages = ["."]
+  revision = "7c0cea34c8ece3fbeb2b27ab9b59511d360fb394"
+
+[[projects]]
   name = "github.com/spf13/pflag"
   packages = ["."]
   revision = "e57e3eeb33f795204c1ca35f56c44f83227c6e66"
   version = "v1.0.0"
+
+[[projects]]
+  name = "github.com/spf13/viper"
+  packages = ["."]
+  revision = "b5e8006cbee93ec955a89ab31e0e3ce3204f3736"
+  version = "v1.0.2"
 
 [[projects]]
   branch = "master"
@@ -152,17 +208,11 @@
   branch = "master"
   name = "golang.org/x/net"
   packages = [
-    "bpf",
     "context",
     "http2",
     "http2/hpack",
-    "icmp",
     "idna",
-    "internal/iana",
-    "internal/socket",
     "internal/timeseries",
-    "ipv4",
-    "ipv6",
     "lex/httplex",
     "trace"
   ]
@@ -234,9 +284,15 @@
   revision = "8e4536a86ab602859c20df5ebfd0bd4228d08655"
   version = "v1.10.0"
 
+[[projects]]
+  name = "gopkg.in/yaml.v2"
+  packages = ["."]
+  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
+  version = "v2.2.1"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9c64bb77fb1ccf585a894c588105f41892af453d39cc5af9ed7288c2ac837772"
+  inputs-digest = "eaa29559adf4b4420a8e4411541644421541dff74fb9a29aeee2840db1af329a"
   solver-name = "gps-cdcl"
   solver-version = 1

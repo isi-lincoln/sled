@@ -2,40 +2,16 @@ package main
 
 import (
 	"context"
-	"flag"
 	"github.com/isi-lincoln/sled"
-	sledc "github.com/isi-lincoln/sled/sledc/pkg"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
-	"net"
 )
-
-var server = flag.String("server", "sled", "sled server to connect to")
-var ifx = flag.String("interface", "eth0", "the interface to use for client id")
 
 func main() {
 
-	flag.Parse()
-
 	conn, sledd := initClient()
 	defer conn.Close()
-
-	ifxs, err := net.Interfaces()
-	if err != nil {
-		log.Fatalf("error getting interface info - %v", err)
-	}
-	if len(ifxs) < 1 {
-		log.Fatalf("no interfaces!")
-	}
-	mac := ""
-	for _, x := range ifxs {
-		if x.Name == *ifx {
-			mac = x.HardwareAddr.String()
-		}
-	}
-	if mac == "" {
-		log.Fatalf("interface %s not found", *ifx)
-	}
+	mac := "localhost"
 
 	// the Command function now returns which functions the client should request
 	resp, err := sledd.Command(context.TODO(), &sled.CommandRequest{mac})
@@ -43,9 +19,11 @@ func main() {
 		log.Fatalf("error getting sledd command - %v", err)
 	}
 
+	log.Infof("got: %v", resp)
+
 	if resp.Wipe != nil {
 		if resp.Wipe.Device != "" {
-			sledc.WipeBlock(resp.Wipe.Device)
+			log.Infof("Fake wipe: %s", resp.Wipe.Device)
 		} else {
 			log.Errorf("Wipe: Empty Device String given.")
 		}
@@ -68,17 +46,10 @@ func main() {
 		if write.Initrd != "" {
 			images = append(images, write.Initrd)
 		}
-		if len(images) > 0 {
-			err = sledc.WriteCommunicator(*server, mac, images)
-			if err != nil {
-				log.Errorf("error communicating with sledd - %v", err)
-			}
-		} else {
-			log.Infof("Client recieved empty write response - %v", write)
-		}
+		log.Infof("Write Images: %s", images)
 	}
 	if resp.Kexec != nil {
-		sledc.Kexec(resp.Kexec.Kernel, resp.Kexec.Append, resp.Kexec.Initrd)
+		log.Infof("kernel: %s, cmd: %s, initrd: %s", resp.Kexec.Kernel, resp.Kexec.Append, resp.Kexec.Initrd)
 	}
 	if resp.Wipe == nil && resp.Write == "" && resp.Kexec == nil {
 		log.Warn("received empty command from server")
@@ -88,7 +59,7 @@ func main() {
 // FIXME: Add certificates for authenticated communitcation client <---> server
 func initClient() (*grpc.ClientConn, sled.SledClient) {
 	conn, err := grpc.Dial(
-		*server+":6000",
+		"localhost:6000",
 		grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("could not connect to sled server - %v", err)
