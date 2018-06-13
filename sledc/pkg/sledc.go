@@ -191,13 +191,20 @@ func WriteOther(kori []byte, flag string) {
 func WriteCommunicator(server string, mac string, images map[string]string) error {
 	buf := make([]byte, 4096)
 	for k, v := range images {
+		// device should only be communicated with image
+		if k == "device" {
+			continue
+		}
+		log.Infof("%s, %s", k, v)
 		// create connection
 		conn, _ := net.Dial("tcp", server+":3000")
 		var devFi *os.File
 		log.Infof("connected to server")
+		// based on the image, use either base name or device name
 		if k == "image" {
-			log.Infof("writing %s to %s", k, images["device"])
-			dev, err := os.OpenFile(images["device"], os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+			imagePath := fmt.Sprintf("/dev/%s", images["device"])
+			log.Infof("writing %s to %s", k, imagePath)
+			dev, err := os.OpenFile(imagePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
 			devFi = dev
 			if err != nil {
 				log.Fatalf("write: error opening device %v", err)
@@ -215,7 +222,7 @@ func WriteCommunicator(server string, mac string, images map[string]string) erro
 		msg := v + "," + mac
 		// send message asking for image for mac address
 		conn.Write([]byte(msg))
-		log.Debugf("wrote %s to server", string(msg))
+		log.Infof("wrote %s to server", string(msg))
 		for {
 			lenb, err := conn.Read(buf)
 			//log.Debugf("reading: %s", string(buf[:lenb]))

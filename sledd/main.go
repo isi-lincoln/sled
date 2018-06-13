@@ -246,6 +246,7 @@ func LowMemWrite(conn net.Conn) error {
 	req := strings.TrimSpace(parsedMsg[0])
 	macAddr := strings.TrimSpace(parsedMsg[1])
 	writeCmd := boltLookup(macAddr)
+	log.Infof("%s, %s, %s", req, macAddr, writeCmd)
 	// if key in our map, then send the contents
 	if req == writeCmd.Write.ImageName || req == writeCmd.Write.KernelName || req == writeCmd.Write.InitrdName {
 		// open file to read contents from
@@ -266,7 +267,7 @@ func LowMemWrite(conn net.Conn) error {
 				log.Errorf("Unable to read %s, err: %v", req, err)
 				return err
 			}
-			log.Debugf("writing: %s", string(buf[:lenb]))
+			log.Debugf("writing: %s", lenb)
 			conn.Write(buf[:lenb])
 		}
 		log.Debugf("Sent file.")
@@ -278,6 +279,7 @@ func boltLookup(mac string) *sled.CommandSet {
 	cs := &sled.CommandSet{}
 	var db *bolt.DB
 	db, err := bolt.Open(sledBoltDB, 0600, nil)
+	defer db.Close()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -302,6 +304,5 @@ func boltLookup(mac string) *sled.CommandSet {
 	if err != nil {
 		log.Errorf("boltDBLookup: %v", err)
 	}
-	db.Close()
 	return cs
 }

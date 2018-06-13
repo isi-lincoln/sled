@@ -59,7 +59,7 @@ func main() {
 			log.Fatalf("error getting write command - %v", err)
 		}
 		log.Infof("Images returned by server: %v", write)
-		var images map[string]string
+		images := make(map[string]string)
 		if write.Image != "" {
 			images["image"] = write.Image
 			images["device"] = write.Device
