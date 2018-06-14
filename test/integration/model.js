@@ -5,7 +5,7 @@ client = {
   initrd: 'linc-initramfs',
   cmdline: 'console=ttyS1',
   defaultnic: 'e1000',
-  memory: { capacity: GB(4) }, // currently necessary
+  memory: { capacity: GB(1) }, // currently necessary
   defaultdisktype: { dev: 'sd', bus: 'sata' }
 }
 
@@ -13,7 +13,7 @@ server = {
   name: 'server',
   image: 'fedora-27',
   cpu: { cores: 2 },
-  memory: { capacity: GB(16) },
+  memory: { capacity: GB(2) },
   mounts: [
     // where code resides
     { source: env.PWD+'/../../', point: '/tmp/code' },
