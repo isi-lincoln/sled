@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"github.com/isi-lincoln/sled"
+	"github.com/ceftb/sled"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )

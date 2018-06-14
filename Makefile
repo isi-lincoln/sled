@@ -19,13 +19,13 @@ build/initramfs.cpio: $(GOPATH)/bin/u-root | build
 	u-root -format=cpio -build=bb -o $@ \
 		github.com/u-root/u-root/cmds/{ps,ls,ip,io,dhclient,wget,tcz,cat,pwd,builtin,boot,dd,dmesg,ed,find,grep,kexec,kill,modprobe,lsmod,mount,mv,ping,umount,uname,vboot,which,shutdown,cp,mkdir,rm,init,rush} \
 		github.com/u-root/elvish \
-		github.com/isi-lincoln/sled/sledc
+		github.com/ceftb/sled/sledc
 	./update-cpio.sh
 
 .ONESHELL:
 $(GOPATH)/bin/u-root:
 	go get -u github.com/u-root/u-root
-	cd $(GOPATH)/src/github.com/u-root/u-root && dep ensure -add github.com/isi-lincoln/sled/sledc && dep ensure -vendor-only -v
+	cd $(GOPATH)/src/github.com/u-root/u-root && dep ensure -add github.com/ceftb/sled/sledc && dep ensure -vendor-only -v
 
 clean:
 	rm -rf build

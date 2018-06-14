@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"flag"
-	"github.com/isi-lincoln/sled"
-	sledc "github.com/isi-lincoln/sled/sledc/pkg"
+	"github.com/ceftb/sled"
+	sledc "github.com/ceftb/sled/sledc/pkg"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"net"

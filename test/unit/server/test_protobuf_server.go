@@ -11,7 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 
-	"github.com/isi-lincoln/sled"
+	"github.com/ceftb/sled"
 )
 
 var db *bolt.DB
