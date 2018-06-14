@@ -4,14 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	bolt "github.com/coreos/bbolt"
+	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 	"io"
 	"net"
 	"os"
 	"strings" // split
-
-	bolt "github.com/coreos/bbolt"
-	log "github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
 
 	"github.com/isi-lincoln/sled"
 )
@@ -65,7 +64,7 @@ func (s *Sledd) Write(
 			log.Errorf("command: non-existant write image %s", cs.Write.ImageName)
 			return nil, err
 		}
-		wr.Image = imageName
+		wr.Image = cs.Write.ImageName
 
 		kernelName := fmt.Sprintf("%s/%s", clientPrefix, cs.Write.KernelName)
 		_, err = os.Stat(kernelName)
@@ -73,7 +72,7 @@ func (s *Sledd) Write(
 			log.Errorf("command: non-existant kernel %s", cs.Write.KernelName)
 			return nil, err
 		}
-		wr.Kernel = kernelName
+		wr.Kernel = cs.Write.KernelName
 
 		initrdName := fmt.Sprintf("%s/%s", clientPrefix, cs.Write.InitrdName)
 		_, err = os.Stat(initrdName)
@@ -81,7 +80,7 @@ func (s *Sledd) Write(
 			log.Errorf("command: non-existant initramfs %s", cs.Write.InitrdName)
 			return nil, err
 		}
-		wr.Initrd = initrdName
+		wr.Initrd = cs.Write.InitrdName
 	}
 
 	return wr, nil
@@ -242,17 +241,23 @@ func LowMemWrite(conn net.Conn) error {
 	msgRec := string(buf)
 	// need to send the first message request the item with the associated mac
 	parsedMsg := strings.Split(msgRec, ",")
-	// just for sanity, remove whitespaces
+	// just for sanity, remove whitespaces, add the prefix location
+
 	req := strings.TrimSpace(parsedMsg[0])
-	macAddr := strings.TrimSpace(parsedMsg[1])
+	// conn.Read 0 pads the message, 0s need to be removed
+	// 17 is 12 + semicolons, \00\00 padding removed
+	macAddr := string([]byte(parsedMsg[1])[:17])
 	writeCmd := boltLookup(macAddr)
-	log.Infof("%s, %s, %s", req, macAddr, writeCmd)
+	log.Infof("(%s), (%s), (%s)", req, macAddr, writeCmd)
+	log.Infof("(%x), (%x), (%x)", writeCmd.Write.ImageName, writeCmd.Write.KernelName, writeCmd.Write.InitrdName)
+	log.Warnf("%x", req)
 	// if key in our map, then send the contents
 	if req == writeCmd.Write.ImageName || req == writeCmd.Write.KernelName || req == writeCmd.Write.InitrdName {
+		fmtReq := fmt.Sprintf("%s/%s", clientPrefix, strings.TrimSpace(parsedMsg[0]))
 		// open file to read contents from
-		fs, err := os.Open(req)
+		fs, err := os.Open(fmtReq)
 		if err != nil {
-			log.Errorf("Unable to open %s, err: %v", req, err)
+			log.Errorf("Unable to open %s, err: %v", fmtReq, err)
 			return err
 		}
 		for {
@@ -262,16 +267,17 @@ func LowMemWrite(conn net.Conn) error {
 				// when we hit an EOF, break execution
 				if err == io.EOF {
 					conn.Close()
-					break
+					log.Debugf("Sent file.")
+					return nil
 				}
-				log.Errorf("Unable to read %s, err: %v", req, err)
+				log.Errorf("Unable to read %s, err: %v", fmtReq, err)
 				return err
 			}
-			log.Debugf("writing: %s", lenb)
+			log.Debugf("writing: %d", lenb)
 			conn.Write(buf[:lenb])
 		}
-		log.Debugf("Sent file.")
 	}
+	log.Warnf("Write image not found: %s", req)
 	return nil
 }
 
@@ -283,6 +289,7 @@ func boltLookup(mac string) *sled.CommandSet {
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Infof("bolt: lookup %s", mac)
 	err = db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("clients"))
 		if b == nil {

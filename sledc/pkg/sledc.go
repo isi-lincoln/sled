@@ -8,7 +8,6 @@ import (
 	"net" // dialing
 	"os"
 	"os/exec"
-	"path/filepath" // split path for filename
 	"strconv"
 	"strings" // remove newline from file
 )
@@ -210,8 +209,7 @@ func WriteCommunicator(server string, mac string, images map[string]string) erro
 				log.Fatalf("write: error opening device %v", err)
 			}
 		} else {
-			baseName := filepath.Base(v)
-			imagePath := fmt.Sprintf("/tmp/%s", baseName)
+			imagePath := fmt.Sprintf("/tmp/%s", k)
 			log.Infof("writing %s to %s", k, imagePath)
 			dev, err := os.OpenFile(imagePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
 			devFi = dev
@@ -222,7 +220,7 @@ func WriteCommunicator(server string, mac string, images map[string]string) erro
 		msg := v + "," + mac
 		// send message asking for image for mac address
 		conn.Write([]byte(msg))
-		log.Infof("wrote %s to server", string(msg))
+		log.Infof("wrote (requested) %s to (from) server", string(msg))
 		for {
 			lenb, err := conn.Read(buf)
 			//log.Debugf("reading: %s", string(buf[:lenb]))

@@ -11,7 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"testing"
-	"time"
+	//"time"
 )
 
 func setupServer() error {
@@ -99,34 +99,36 @@ func TestRvnBootSimple(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	log.Infof("Server: Starting Sledd")
-	// run sledc on client
-	err = server.RunSledd()
-	if err != nil {
-		stopRaven()
-		t.Fatalf("%v", err)
-	}
+	/*
+		log.Infof("Server: Starting Sledd")
+		// run sledc on client
+		err = server.RunSledd()
+		if err != nil {
+			stopRaven()
+			t.Fatalf("%v", err)
+		}
 
-	//give server a second or two to start
-	time.Sleep(2 * time.Second)
+		//give server a second or two to start
+		time.Sleep(2 * time.Second)
 
-	log.Infof("Client: Running Sledc")
-	err = client.RunSledc(shared.ServerIP, shared.ClientIface)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+		log.Infof("Client: Running Sledc")
+		err = client.RunSledc(shared.ServerIP, shared.ClientIface)
+		if err != nil {
+			t.Fatalf("%v", err)
+		}
 
-	log.Infof("Waiting for Client to finish Kexec...")
-	err = client.WaitForClient(300)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+		log.Infof("Waiting for Client to finish Kexec...")
+		err = client.WaitForClient(300)
+		if err != nil {
+			t.Fatalf("%v", err)
+		}
 
-	// tear down all the raven configuration
-	err = stopRaven()
-	if err != nil {
-		t.Fatalf("Unable to stop Raven: %v", err)
-	}
+		// tear down all the raven configuration
+		err = stopRaven()
+		if err != nil {
+			t.Fatalf("Unable to stop Raven: %v", err)
+		}
+	*/
 }
 
 // ~~~~~~~~~~~~ HELPER FUNCTIONS ~~~~~~~~~~~~~~
